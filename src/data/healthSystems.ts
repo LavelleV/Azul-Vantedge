@@ -1,0 +1,17 @@
+export const healthSystems = [
+  'Neuro-Calm',
+  'Cognitive Flow',
+  'Joint Decompression',
+  'Fascial Release',
+  'Systemic Reset',
+  'Dorsal Recovery',
+  'Neural Path',
+  'Glymphatic Flush',
+  'Vitality Core',
+  'Dermal Repair',
+  'Somnolence',
+  'Enteric Balance',
+  'Ocular Refresh',
+  'Respiratory Open',
+  'Adrenal Support',
+] as const;
