@@ -1,7 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Svg, { Circle, Ellipse, G, Path, Rect } from 'react-native-svg';
 import { fullBodyRegions, type BodyMapPrimaryRegion, type BodyMapView, type CloseUpHotspot } from '../data/bodyMapRegions';
+
+import frontFullBodyImage from '../../assets/body-map/full/front-full-body.png';
+import backFullBodyImage from '../../assets/body-map/full/back-full-body.png';
+import hipFrontImage from '../../assets/body-map/regions/hip-front.png';
+import hipGluteBackImage from '../../assets/body-map/regions/hip-glute-back.png';
 
 // Future anatomical image assets for the production body-map system:
 // assets/body-map/full/front-full-body.png
@@ -25,8 +30,8 @@ const COLORS = {
   bodyHighlight: '#E5ECF4',
 };
 
-const HAS_FULL_BODY_IMAGE_ASSETS = false;
-const HAS_HIP_CLOSEUP_IMAGE_ASSETS = false;
+const HAS_FULL_BODY_IMAGE_ASSETS = true;
+const HAS_HIP_CLOSEUP_IMAGE_ASSETS = true;
 
 type OverlayRegionProps = {
   x: number;
@@ -132,13 +137,24 @@ function FullBodyMap({
   onSelectRegion: (region: BodyMapPrimaryRegion) => void;
 }) {
   const visibleRegions = getVisiblePrimaryRegions(viewMode);
+  const [imageFailed, setImageFailed] = useState(false);
+  const showImage = HAS_FULL_BODY_IMAGE_ASSETS && !imageFailed;
 
   return (
     <View style={styles.assetCanvas}>
-      <Svg width="100%" height="100%" viewBox="0 0 220 540">
-        <Rect x="10" y="10" width="200" height="520" rx="34" fill="#F7FAFD" />
-        {viewMode === 'front' ? <FrontBodyBase /> : <BackBodyBase />}
-      </Svg>
+      {showImage ? (
+        <Image
+          source={viewMode === 'front' ? frontFullBodyImage : backFullBodyImage}
+          style={styles.assetImage}
+          resizeMode="contain"
+          onError={() => setImageFailed(true)}
+        />
+      ) : (
+        <Svg width="100%" height="100%" viewBox="0 0 220 540">
+          <Rect x="10" y="10" width="200" height="520" rx="34" fill="#F7FAFD" />
+          {viewMode === 'front' ? <FrontBodyBase /> : <BackBodyBase />}
+        </Svg>
+      )}
 
       <Svg width="100%" height="100%" viewBox="0 0 220 540" style={styles.overlaySvg}>
         <G>
@@ -171,17 +187,27 @@ function CloseUpMap({
   selectedBodyArea?: string;
   onSelectHotspot: (hotspot: CloseUpHotspot) => void;
 }) {
-  const showHipImage = region.id === 'hip-glute' && HAS_HIP_CLOSEUP_IMAGE_ASSETS;
+  const [imageFailed, setImageFailed] = useState(false);
+  const showHipImage = region.id === 'hip-glute' && HAS_HIP_CLOSEUP_IMAGE_ASSETS && !imageFailed;
 
   return (
     <View style={styles.assetCanvas}>
-      <Svg width="100%" height="100%" viewBox="0 0 220 220">
-        <Rect x="10" y="10" width="200" height="200" rx="28" fill="#F7FAFD" />
-        <Ellipse cx="110" cy="110" rx="76" ry="88" fill={COLORS.bodyHighlight} />
-        <Ellipse cx="110" cy="112" rx="68" ry="80" fill={COLORS.body} />
-        <Path d="M68 62 C84 42, 136 42, 152 62" stroke={COLORS.lineStrong} strokeWidth="2" fill="none" />
-        <Path d="M72 158 C92 176, 128 176, 148 158" stroke={COLORS.lineStrong} strokeWidth="2" fill="none" />
-      </Svg>
+      {showHipImage ? (
+        <Image
+          source={viewMode === 'front' ? hipFrontImage : hipGluteBackImage}
+          style={styles.assetImage}
+          resizeMode="contain"
+          onError={() => setImageFailed(true)}
+        />
+      ) : (
+        <Svg width="100%" height="100%" viewBox="0 0 220 220">
+          <Rect x="10" y="10" width="200" height="200" rx="28" fill="#F7FAFD" />
+          <Ellipse cx="110" cy="110" rx="76" ry="88" fill={COLORS.bodyHighlight} />
+          <Ellipse cx="110" cy="112" rx="68" ry="80" fill={COLORS.body} />
+          <Path d="M68 62 C84 42, 136 42, 152 62" stroke={COLORS.lineStrong} strokeWidth="2" fill="none" />
+          <Path d="M72 158 C92 176, 128 176, 148 158" stroke={COLORS.lineStrong} strokeWidth="2" fill="none" />
+        </Svg>
+      )}
 
       <Svg width="100%" height="100%" viewBox="0 0 220 220" style={styles.overlaySvg}>
         <G>
@@ -216,10 +242,9 @@ function BodyMapVisual({
   onSelectRegion: (region: BodyMapPrimaryRegion) => void;
   onSelectHotspot: (hotspot: CloseUpHotspot) => void;
 }) {
-  // The app currently runs on the vector fallback because the expected image assets
-  // are not present at runtime. When the real anatomical PNG files are added to the
-  // documented asset paths, the image layer can be re-enabled without changing the
-  // overlay selection logic.
+  // Real anatomical assets are active for the full-body map and hip close-up.
+  // If any image fails to load at runtime, the SVG fallback remains in place so
+  // the app never loses selection behavior or blanks the page.
 
   if (activeRegion) {
     return (
@@ -435,6 +460,10 @@ const styles = StyleSheet.create({
   },
   visualPanelWide: {
     flex: 1.4,
+  },
+  assetImage: {
+    width: '100%',
+    height: '100%',
   },
   backButton: {
     alignSelf: 'flex-start',
