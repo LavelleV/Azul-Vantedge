@@ -22,6 +22,42 @@ function formatTimestamp(timestamp: string) {
   })}`;
 }
 
+function extractProtocolBadges(response: AzulAgentResponse) {
+  const combined = [
+    ...response.bestStartingProtocol,
+    ...response.padPlacement,
+    ...response.whyThisPlacement,
+    ...response.sessionTips,
+    ...response.aftercare,
+    ...response.escalation,
+  ].join(' ');
+
+  const matches = combined.match(/#\d+/g) ?? [];
+  return [...new Set(matches)].slice(0, 4);
+}
+
+function MetaBadge({ label, tone = 'slate' }: { label: string; tone?: 'slate' | 'navy' | 'gold' }) {
+  return (
+    <View
+      style={[
+        styles.badge,
+        tone === 'navy' && styles.badgeNavy,
+        tone === 'gold' && styles.badgeGold,
+      ]}
+    >
+      <Text
+        style={[
+          styles.badgeLabel,
+          tone === 'navy' && styles.badgeLabelLight,
+          tone === 'gold' && styles.badgeLabelNavy,
+        ]}
+      >
+        {label}
+      </Text>
+    </View>
+  );
+}
+
 export function SessionHistory({
   sessions,
   onOpen,
@@ -53,20 +89,41 @@ export function SessionHistory({
       </View>
 
       {sessions.length ? (
-        sessions.map((session) => (
-          <View key={session.id} style={styles.sessionCard}>
-            <Text style={styles.timestamp}>{formatTimestamp(session.createdAt)}</Text>
-            <Text style={styles.meta}>
-              {session.selectedBodyArea || 'No body area tagged'} • {session.activeDeviceModel} • {session.userMode === 'client' ? 'Client Mode' : 'Practitioner Mode'}
-            </Text>
-            <Text style={styles.questionPreview} numberOfLines={2}>
-              {session.question}
-            </Text>
-            <Pressable style={styles.openButton} onPress={() => onOpen(session)}>
-              <Text style={styles.openButtonLabel}>View</Text>
-            </Pressable>
-          </View>
-        ))
+        sessions.map((session) => {
+          const protocolBadges = extractProtocolBadges(session.response);
+
+          return (
+            <View key={session.id} style={styles.sessionCard}>
+              <View style={styles.sessionTopRow}>
+                <Text style={styles.timestamp}>{formatTimestamp(session.createdAt)}</Text>
+                <Pressable style={styles.openButton} onPress={() => onOpen(session)}>
+                  <Text style={styles.openButtonLabel}>View</Text>
+                </Pressable>
+              </View>
+
+              <Text style={styles.questionPreview} numberOfLines={2}>
+                {session.question}
+              </Text>
+
+              <View style={styles.badgesWrap}>
+                <MetaBadge label={session.selectedBodyArea || 'No body area'} tone="gold" />
+                <MetaBadge label={session.activeDeviceModel} tone="navy" />
+                <MetaBadge label={session.userMode === 'client' ? 'Client Mode' : 'Practitioner Mode'} />
+              </View>
+
+              {protocolBadges.length ? (
+                <View style={styles.protocolRow}>
+                  <Text style={styles.protocolLabel}>Top protocols</Text>
+                  <View style={styles.protocolBadgesWrap}>
+                    {protocolBadges.map((protocol) => (
+                      <MetaBadge key={`${session.id}-${protocol}`} label={protocol} tone="gold" />
+                    ))}
+                  </View>
+                </View>
+              ) : null}
+            </View>
+          );
+        })
       ) : (
         <Text style={styles.emptyText}>
           Saved sessions will appear here after you analyze a question.
@@ -123,17 +180,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(0, 35, 102, 0.08)',
     padding: 14,
-    gap: 6,
+    gap: 10,
+  },
+  sessionTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 10,
   },
   timestamp: {
     color: '#002366',
     fontSize: 12,
     fontWeight: '700',
-  },
-  meta: {
-    color: '#5F6C84',
-    fontSize: 12,
-    lineHeight: 18,
   },
   questionPreview: {
     color: '#474747',
@@ -141,15 +199,62 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     fontWeight: '600',
   },
+  badgesWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  badge: {
+    minHeight: 28,
+    borderRadius: 999,
+    backgroundColor: '#EEF3F8',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 35, 102, 0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 10,
+  },
+  badgeNavy: {
+    backgroundColor: '#002366',
+    borderColor: '#002366',
+  },
+  badgeGold: {
+    backgroundColor: '#F4E7AC',
+    borderColor: 'rgba(212, 175, 55, 0.45)',
+  },
+  badgeLabel: {
+    color: '#5F6C84',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  badgeLabelLight: {
+    color: '#FFFFFF',
+  },
+  badgeLabelNavy: {
+    color: '#002366',
+  },
+  protocolRow: {
+    gap: 8,
+  },
+  protocolLabel: {
+    color: '#002366',
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+  },
+  protocolBadgesWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
   openButton: {
-    alignSelf: 'flex-start',
     minHeight: 38,
     borderRadius: 14,
     backgroundColor: '#002366',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 16,
-    marginTop: 4,
   },
   openButtonLabel: {
     color: '#FFFFFF',
