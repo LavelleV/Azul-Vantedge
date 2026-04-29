@@ -167,12 +167,12 @@ export const fullBodyRegions: BodyMapPrimaryRegion[] = [
     height: 8,
     closeUpTitle: 'Hip / Glute Detail',
     closeUpHotspots: [
-      { id: 'glute', label: 'Glute', displayName: 'Glute', x: 18, y: 18, width: 64, height: 16 },
-      { id: 'piriformis', label: 'Piriformis', displayName: 'Piriformis / Deep Glute', x: 26, y: 38, width: 48, height: 14 },
-      { id: 'si-joint-hip', label: 'SI Joint', displayName: 'SI Joint', x: 28, y: 56, width: 44, height: 12 },
-      { id: 'lateral-hip', label: 'Lateral Hip', displayName: 'Lateral Hip / Greater Trochanter', x: 14, y: 72, width: 30, height: 14 },
-      { id: 'front-hip', label: 'Front Hip', displayName: 'Front Hip / Hip Flexor', x: 56, y: 72, width: 30, height: 14 },
-      { id: 'hamstring-origin', label: 'Hamstring Origin', displayName: 'Upper Hamstring Origin', x: 30, y: 90, width: 40, height: 10 },
+      { id: 'glute', label: 'Glute', displayName: 'Glute', x: 24, y: 22, width: 42, height: 14 },
+      { id: 'piriformis', label: 'Piriformis', displayName: 'Piriformis / Deep Glute', x: 36, y: 40, width: 28, height: 12 },
+      { id: 'si-joint-hip', label: 'SI Joint', displayName: 'SI Joint', x: 42, y: 56, width: 18, height: 10 },
+      { id: 'lateral-hip', label: 'Lateral Hip', displayName: 'Lateral Hip / Greater Trochanter', x: 18, y: 60, width: 20, height: 14 },
+      { id: 'front-hip', label: 'Front Hip', displayName: 'Front Hip / Hip Flexor', x: 64, y: 60, width: 18, height: 14 },
+      { id: 'hamstring-origin', label: 'Hamstring Origin', displayName: 'Upper Hamstring Origin', x: 38, y: 82, width: 24, height: 10 },
     ],
   },
   {

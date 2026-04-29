@@ -41,9 +41,10 @@ type OverlayRegionProps = {
   label: string;
   active: boolean;
   onPress: () => void;
+  subtle?: boolean;
 };
 
-function OverlayRegion({ x, y, width, height, active, onPress }: OverlayRegionProps) {
+function OverlayRegion({ x, y, width, height, active, onPress, subtle = false }: OverlayRegionProps) {
   return (
     <Rect
       x={x}
@@ -51,9 +52,9 @@ function OverlayRegion({ x, y, width, height, active, onPress }: OverlayRegionPr
       width={width}
       height={height}
       rx={Math.min(height / 2, 12)}
-      fill={active ? 'rgba(212, 175, 55, 0.90)' : 'rgba(0, 35, 102, 0.08)'}
-      stroke={active ? COLORS.navy : COLORS.lineStrong}
-      strokeWidth={active ? 2.4 : 1.2}
+      fill={active ? 'rgba(212, 175, 55, 0.28)' : 'rgba(0, 35, 102, 0.01)'}
+      stroke={active ? COLORS.gold : subtle ? 'rgba(0, 35, 102, 0.02)' : COLORS.lineStrong}
+      strokeWidth={active ? 1.8 : subtle ? 0.6 : 1}
       onPress={onPress}
     />
   );
@@ -166,6 +167,7 @@ function FullBodyMap({
                 {...rect}
                 label={region.label}
                 active={selectedBodyArea === region.label}
+                subtle
                 onPress={() => onSelectRegion(region)}
               />
             );
@@ -266,6 +268,14 @@ function BodyMapVisual({
   );
 }
 
+function getCloseUpHotspotsForPanel(activeRegion: BodyMapPrimaryRegion | null) {
+  if (!activeRegion) {
+    return [] as CloseUpHotspot[];
+  }
+
+  return activeRegion.closeUpHotspots;
+}
+
 export function BodyMap({
   selectedBodyArea,
   onSelect,
@@ -293,6 +303,7 @@ export function BodyMap({
   }, [activeRegion, selectedBodyArea]);
 
   const selectedLabel = activeRegion ? `${activeRegion.label} detail` : selectedBodyArea ?? 'None selected yet';
+  const closeUpHotspots = getCloseUpHotspotsForPanel(activeRegion);
 
   return (
     <View style={styles.card}>
@@ -367,6 +378,29 @@ export function BodyMap({
                 ? 'Choose the most precise hotspot you can identify. The selected label is passed back into Azul as context.'
                 : 'Start with a broad region, then move into a close-up map for more precise targeting.'}
             </Text>
+            {closeUpHotspots.length ? (
+              <View style={styles.hotspotButtonWrap}>
+                {closeUpHotspots.map((hotspot) => (
+                  <Pressable
+                    key={hotspot.id}
+                    style={[
+                      styles.hotspotButton,
+                      selectedBodyArea === hotspot.displayName && styles.hotspotButtonActive,
+                    ]}
+                    onPress={() => onSelect(hotspot.displayName)}
+                  >
+                    <Text
+                      style={[
+                        styles.hotspotButtonLabel,
+                        selectedBodyArea === hotspot.displayName && styles.hotspotButtonLabelActive,
+                      ]}
+                    >
+                      {hotspot.displayName}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
           </View>
         </View>
       </View>
@@ -445,7 +479,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.mist,
     borderWidth: 1,
     borderColor: COLORS.line,
-    padding: 14,
+    paddingHorizontal: 8,
+    paddingVertical: 10,
     justifyContent: 'center',
   },
   assetCanvas: {
@@ -544,5 +579,33 @@ const styles = StyleSheet.create({
     color: COLORS.ink,
     fontSize: 14,
     lineHeight: 21,
+  },
+  hotspotButtonWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 4,
+  },
+  hotspotButton: {
+    minHeight: 34,
+    borderRadius: 999,
+    backgroundColor: '#EEF3F8',
+    borderWidth: 1,
+    borderColor: COLORS.line,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 10,
+  },
+  hotspotButtonActive: {
+    backgroundColor: 'rgba(212, 175, 55, 0.16)',
+    borderColor: 'rgba(212, 175, 55, 0.45)',
+  },
+  hotspotButtonLabel: {
+    color: COLORS.ink,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  hotspotButtonLabelActive: {
+    color: COLORS.navy,
   },
 });
