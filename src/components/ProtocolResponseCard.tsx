@@ -33,7 +33,7 @@ export function ProtocolResponseCard({
       ) : (
         <>
           <Section title="Clinical Read" items={response.clinicalRead} />
-          <Section title="Best Starting Protocol" items={response.bestStartingProtocol} />
+          <Section title="Protocol Plan" items={response.bestStartingProtocol} />
           <Section title="Pad Placement" items={response.padPlacement} />
           <Section title="Why This Placement" items={response.whyThisPlacement} />
           <Section title="Session Tips" items={response.sessionTips} />
