@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Linking, Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -6,6 +6,12 @@ import { OnboardingScreen } from './src/screens/OnboardingScreen';
 import { DashboardScreen } from './src/screens/DashboardScreen';
 import { ProtocolResponseCard } from './src/components/ProtocolResponseCard';
 import { type SavedSession } from './src/components/SessionHistory';
+import {
+  MAX_SAVED_SESSIONS,
+  clearSavedSessionsStorage,
+  loadSavedSessions,
+  saveSavedSessions,
+} from './src/data/savedSessionsStorage';
 import { deviceModels, type DeviceModel } from './src/data/deviceModels';
 import {
   generateAzulResponse,
@@ -129,6 +135,13 @@ export default function App() {
   const [savedSessions, setSavedSessions] = useState<SavedSession[]>([]);
   const [selectedSession, setSelectedSession] = useState<SavedSession | null>(null);
 
+  useEffect(() => {
+    void (async () => {
+      const storedSessions = await loadSavedSessions();
+      setSavedSessions(storedSessions);
+    })();
+  }, []);
+
   const handleAnalyze = async () => {
     const userQuestion = question.trim();
     if (!userQuestion || isAnalyzing) {
@@ -147,19 +160,22 @@ export default function App() {
     });
 
     setResponse(nextResponse);
-    setSavedSessions((current) => [
-      {
-        id: `${Date.now()}`,
-        createdAt: new Date().toISOString(),
-        question: userQuestion,
-        selectedBodyArea,
-        activeDeviceModel: activeModel,
-        userMode,
-        response: nextResponse,
-        vibeJournalData,
-      },
-      ...current,
-    ]);
+    const nextSession: SavedSession = {
+      id: `${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      question: userQuestion,
+      selectedBodyArea,
+      activeDeviceModel: activeModel,
+      userMode,
+      response: nextResponse,
+      vibeJournalData,
+    };
+
+    setSavedSessions((current) => {
+      const nextSessions = [nextSession, ...current].slice(0, MAX_SAVED_SESSIONS);
+      void saveSavedSessions(nextSessions);
+      return nextSessions;
+    });
     setIsAnalyzing(false);
   };
 
@@ -231,7 +247,10 @@ export default function App() {
               onRequestAssessment={handleRequestAssessment}
               sessions={savedSessions}
               onOpenSession={setSelectedSession}
-              onClearHistory={() => setSavedSessions([])}
+              onClearHistory={() => {
+                setSavedSessions([]);
+                void clearSavedSessionsStorage();
+              }}
             />
           )}
         </Stack.Screen>
