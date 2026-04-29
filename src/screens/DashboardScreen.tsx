@@ -1,5 +1,5 @@
 import React from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { DeviceSelector } from '../components/DeviceSelector';
 import { ClinicalAgent } from '../components/ClinicalAgent';
@@ -31,6 +31,7 @@ export function DashboardScreen({
   onOpenSession,
   onDeleteSession,
   onClearHistory,
+  onOpenSettingsLegal,
 }: {
   activeModel: DeviceModel;
   setActiveModel: (model: DeviceModel) => void;
@@ -51,11 +52,15 @@ export function DashboardScreen({
   onOpenSession: (session: SavedSession) => void;
   onDeleteSession: (session: SavedSession) => void;
   onClearHistory: () => void;
+  onOpenSettingsLegal: () => void;
 }) {
   return (
     <SafeAreaView style={styles.screen}>
       <StatusBar style="light" />
       <View style={styles.header}>
+        <Pressable style={styles.settingsButton} onPress={onOpenSettingsLegal}>
+          <Text style={styles.settingsButtonLabel}>Settings / Legal</Text>
+        </Pressable>
         <Text style={styles.eyebrow}>The Biological Edge</Text>
         <Text style={styles.title}>Azul Clinical Agent</Text>
         <Text style={styles.subtitle}>
@@ -125,6 +130,21 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
     borderBottomLeftRadius: 28,
     borderBottomRightRadius: 28,
+  },
+  settingsButton: {
+    alignSelf: 'flex-end',
+    minHeight: 34,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.10)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    marginBottom: 10,
+  },
+  settingsButtonLabel: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
   },
   eyebrow: {
     color: '#D4AF37',

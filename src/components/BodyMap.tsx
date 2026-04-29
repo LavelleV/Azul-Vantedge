@@ -1,30 +1,16 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Svg, { Circle, Ellipse, G, Path, Rect } from 'react-native-svg';
+import { fullBodyRegions, type BodyMapPrimaryRegion, type BodyMapView, type CloseUpHotspot } from '../data/bodyMapRegions';
 
-type BodyRegion = {
-  key: string;
-  frontOnly?: boolean;
-  backOnly?: boolean;
-  kind: 'circle' | 'rect' | 'ellipse';
-  x: number;
-  y: number;
-  width?: number;
-  height?: number;
-  r?: number;
-};
-
-const REGIONS: BodyRegion[] = [
-  { key: 'Head / Brain', kind: 'circle', x: 110, y: 46, r: 24 },
-  { key: 'Neck', kind: 'rect', x: 98, y: 74, width: 24, height: 18 },
-  { key: 'Shoulder', kind: 'rect', x: 46, y: 96, width: 128, height: 28 },
-  { key: 'Abdomen / Gut', kind: 'ellipse', x: 110, y: 182, width: 70, height: 48, frontOnly: true },
-  { key: 'Low Back / SI', kind: 'ellipse', x: 110, y: 200, width: 82, height: 40, backOnly: true },
-  { key: 'Hip', kind: 'rect', x: 62, y: 232, width: 96, height: 28 },
-  { key: 'Knee', kind: 'rect', x: 74, y: 352, width: 72, height: 26 },
-  { key: 'Ankle / Foot', kind: 'rect', x: 70, y: 466, width: 80, height: 22 },
-  { key: 'Full Body / Systemic', kind: 'rect', x: 40, y: 506, width: 140, height: 26 },
-];
+// Future anatomical image assets for the production body-map system:
+// assets/body-map/full/front-full-body.png
+// assets/body-map/full/back-full-body.png
+// assets/body-map/regions/*.png
+//
+// This component keeps the current vector fallback active until those assets exist.
+// The region and hotspot overlay values are stored as percentages in bodyMapRegions.ts
+// so image-based alignment can be tuned later without rewriting selection behavior.
 
 const COLORS = {
   navy: '#002366',
@@ -39,54 +25,31 @@ const COLORS = {
   bodyHighlight: '#E5ECF4',
 };
 
-function drawRegion(region: BodyRegion, active: boolean, onSelect: (key: string) => void) {
-  const fill = active ? 'rgba(212, 175, 55, 0.90)' : 'rgba(0, 35, 102, 0.08)';
-  const stroke = active ? COLORS.navy : COLORS.lineStrong;
-  const strokeWidth = active ? 2.6 : 1.3;
+const HAS_FULL_BODY_IMAGE_ASSETS = false;
+const HAS_HIP_CLOSEUP_IMAGE_ASSETS = false;
 
-  if (region.kind === 'circle') {
-    return (
-      <Circle
-        key={region.key}
-        cx={region.x}
-        cy={region.y}
-        r={region.r}
-        fill={fill}
-        stroke={stroke}
-        strokeWidth={strokeWidth}
-        onPress={() => onSelect(region.key)}
-      />
-    );
-  }
+type OverlayRegionProps = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  label: string;
+  active: boolean;
+  onPress: () => void;
+};
 
-  if (region.kind === 'ellipse') {
-    return (
-      <Ellipse
-        key={region.key}
-        cx={region.x}
-        cy={region.y}
-        rx={(region.width ?? 0) / 2}
-        ry={(region.height ?? 0) / 2}
-        fill={fill}
-        stroke={stroke}
-        strokeWidth={strokeWidth}
-        onPress={() => onSelect(region.key)}
-      />
-    );
-  }
-
+function OverlayRegion({ x, y, width, height, active, onPress }: OverlayRegionProps) {
   return (
     <Rect
-      key={region.key}
-      x={region.x}
-      y={region.y}
-      width={region.width}
-      height={region.height}
-      rx={(region.height ?? 18) / 2}
-      fill={fill}
-      stroke={stroke}
-      strokeWidth={strokeWidth}
-      onPress={() => onSelect(region.key)}
+      x={x}
+      y={y}
+      width={width}
+      height={height}
+      rx={Math.min(height / 2, 12)}
+      fill={active ? 'rgba(212, 175, 55, 0.90)' : 'rgba(0, 35, 102, 0.08)'}
+      stroke={active ? COLORS.navy : COLORS.lineStrong}
+      strokeWidth={active ? 2.4 : 1.2}
+      onPress={onPress}
     />
   );
 }
@@ -114,8 +77,6 @@ function FrontBodyBase() {
       <Path d="M150 376 L140 382 L148 470 L168 468 Z" fill={COLORS.bodyShadow} />
       <Path d="M60 470 C68 478, 80 482, 96 480" stroke={COLORS.bodyShadow} strokeWidth="12" strokeLinecap="round" fill="none" />
       <Path d="M124 480 C140 482, 152 478, 160 470" stroke={COLORS.bodyShadow} strokeWidth="12" strokeLinecap="round" fill="none" />
-      <Path d="M92 170 C98 178, 102 182, 110 182 C118 182, 122 178, 128 170" stroke={COLORS.line} strokeWidth="1.2" fill="none" />
-      <Path d="M96 206 C100 212, 104 214, 110 214 C116 214, 120 212, 124 206" stroke={COLORS.line} strokeWidth="1.2" fill="none" />
     </G>
   );
 }
@@ -130,11 +91,6 @@ function BackBodyBase() {
         d="M64 110 C74 90, 90 84, 110 84 C130 84, 146 90, 156 110 L164 150 C160 158, 152 164, 142 168 L136 250 C128 260, 120 264, 110 264 C100 264, 92 260, 84 250 L78 168 C68 164, 60 158, 56 150 Z"
         fill={COLORS.body}
       />
-      <Path
-        d="M86 118 C94 108, 102 106, 110 106 C118 106, 126 108, 134 118 L138 152 C130 158, 122 162, 110 162 C98 162, 90 158, 82 152 Z"
-        fill={COLORS.bodyHighlight}
-        opacity="0.42"
-      />
       <Path d="M78 126 L52 234 L66 238 L94 138 Z" fill={COLORS.bodyShadow} />
       <Path d="M142 126 L168 234 L154 238 L126 138 Z" fill={COLORS.bodyShadow} />
       <Path d="M84 252 L70 376 L88 380 L102 262 Z" fill={COLORS.body} />
@@ -144,41 +100,144 @@ function BackBodyBase() {
       <Path d="M62 470 C70 478, 82 482, 98 480" stroke={COLORS.bodyShadow} strokeWidth="12" strokeLinecap="round" fill="none" />
       <Path d="M122 480 C138 482, 150 478, 158 470" stroke={COLORS.bodyShadow} strokeWidth="12" strokeLinecap="round" fill="none" />
       <Path d="M110 110 L110 246" stroke={COLORS.lineStrong} strokeWidth="1.2" opacity="0.55" />
-      <Path d="M88 188 C94 182, 100 180, 110 180 C120 180, 126 182, 132 188" stroke={COLORS.line} strokeWidth="1.2" fill="none" />
-      <Path d="M90 210 C96 220, 102 224, 110 224 C118 224, 124 220, 130 210" stroke={COLORS.line} strokeWidth="1.2" fill="none" />
     </G>
   );
 }
 
-function BodySilhouette({
+function getVisiblePrimaryRegions(viewMode: 'front' | 'back') {
+  return fullBodyRegions.filter((region) => {
+    if (region.supportedView === 'both') {
+      return true;
+    }
+    return region.supportedView === viewMode;
+  });
+}
+
+function toCanvasRect(region: { x: number; y: number; width: number; height: number }) {
+  return {
+    x: (region.x / 100) * 220,
+    y: (region.y / 100) * 540,
+    width: (region.width / 100) * 220,
+    height: (region.height / 100) * 540,
+  };
+}
+
+function FullBodyMap({
   viewMode,
   selectedBodyArea,
-  onSelect,
+  onSelectRegion,
 }: {
   viewMode: 'front' | 'back';
   selectedBodyArea?: string;
-  onSelect: (bodyArea: string) => void;
+  onSelectRegion: (region: BodyMapPrimaryRegion) => void;
 }) {
-  const visibleRegions = REGIONS.filter((region) => {
-    if (viewMode === 'front' && region.backOnly) {
-      return false;
-    }
-    if (viewMode === 'back' && region.frontOnly) {
-      return false;
-    }
-    return true;
-  });
+  const visibleRegions = getVisiblePrimaryRegions(viewMode);
 
   return (
-    <Svg width="100%" height="100%" viewBox="0 0 220 540">
-      <G>
+    <View style={styles.assetCanvas}>
+      <Svg width="100%" height="100%" viewBox="0 0 220 540">
         <Rect x="10" y="10" width="200" height="520" rx="34" fill="#F7FAFD" />
-      </G>
-      {viewMode === 'front' ? <FrontBodyBase /> : <BackBodyBase />}
-      <G>
-        {visibleRegions.map((region) => drawRegion(region, selectedBodyArea === region.key, onSelect))}
-      </G>
-    </Svg>
+        {viewMode === 'front' ? <FrontBodyBase /> : <BackBodyBase />}
+      </Svg>
+
+      <Svg width="100%" height="100%" viewBox="0 0 220 540" style={styles.overlaySvg}>
+        <G>
+          {visibleRegions.map((region) => {
+            const rect = toCanvasRect(region);
+            return (
+              <OverlayRegion
+                key={`${viewMode}-${region.id}`}
+                {...rect}
+                label={region.label}
+                active={selectedBodyArea === region.label}
+                onPress={() => onSelectRegion(region)}
+              />
+            );
+          })}
+        </G>
+      </Svg>
+    </View>
+  );
+}
+
+function CloseUpMap({
+  region,
+  viewMode,
+  selectedBodyArea,
+  onSelectHotspot,
+}: {
+  region: BodyMapPrimaryRegion;
+  viewMode: 'front' | 'back';
+  selectedBodyArea?: string;
+  onSelectHotspot: (hotspot: CloseUpHotspot) => void;
+}) {
+  const showHipImage = region.id === 'hip-glute' && HAS_HIP_CLOSEUP_IMAGE_ASSETS;
+
+  return (
+    <View style={styles.assetCanvas}>
+      <Svg width="100%" height="100%" viewBox="0 0 220 220">
+        <Rect x="10" y="10" width="200" height="200" rx="28" fill="#F7FAFD" />
+        <Ellipse cx="110" cy="110" rx="76" ry="88" fill={COLORS.bodyHighlight} />
+        <Ellipse cx="110" cy="112" rx="68" ry="80" fill={COLORS.body} />
+        <Path d="M68 62 C84 42, 136 42, 152 62" stroke={COLORS.lineStrong} strokeWidth="2" fill="none" />
+        <Path d="M72 158 C92 176, 128 176, 148 158" stroke={COLORS.lineStrong} strokeWidth="2" fill="none" />
+      </Svg>
+
+      <Svg width="100%" height="100%" viewBox="0 0 220 220" style={styles.overlaySvg}>
+        <G>
+          {region.closeUpHotspots.map((hotspot) => {
+            const rect = toCanvasRect(hotspot);
+            return (
+              <OverlayRegion
+                key={hotspot.id}
+                {...rect}
+                label={hotspot.displayName}
+                active={selectedBodyArea === hotspot.displayName}
+                onPress={() => onSelectHotspot(hotspot)}
+              />
+            );
+          })}
+        </G>
+      </Svg>
+    </View>
+  );
+}
+
+function BodyMapVisual({
+  viewMode,
+  selectedBodyArea,
+  activeRegion,
+  onSelectRegion,
+  onSelectHotspot,
+}: {
+  viewMode: 'front' | 'back';
+  selectedBodyArea?: string;
+  activeRegion: BodyMapPrimaryRegion | null;
+  onSelectRegion: (region: BodyMapPrimaryRegion) => void;
+  onSelectHotspot: (hotspot: CloseUpHotspot) => void;
+}) {
+  // The app currently runs on the vector fallback because the expected image assets
+  // are not present at runtime. When the real anatomical PNG files are added to the
+  // documented asset paths, the image layer can be re-enabled without changing the
+  // overlay selection logic.
+
+  if (activeRegion) {
+    return (
+        <CloseUpMap
+          region={activeRegion}
+          viewMode={viewMode}
+          selectedBodyArea={selectedBodyArea}
+          onSelectHotspot={onSelectHotspot}
+        />
+    );
+  }
+
+  return (
+    <FullBodyMap
+      viewMode={viewMode}
+      selectedBodyArea={selectedBodyArea}
+      onSelectRegion={onSelectRegion}
+    />
   );
 }
 
@@ -192,75 +251,97 @@ export function BodyMap({
   onClear: () => void;
 }) {
   const [viewMode, setViewMode] = useState<'front' | 'back'>('front');
+  const [activeRegion, setActiveRegion] = useState<BodyMapPrimaryRegion | null>(null);
   const { width } = useWindowDimensions();
   const wideLayout = width >= 900;
 
   const helperCopy = useMemo(() => {
+    if (activeRegion) {
+      return `Select a more precise area inside ${activeRegion.closeUpTitle}.`;
+    }
+
     if (!selectedBodyArea) {
-      return 'Tap the anatomical silhouette to add location context before you analyze.';
+      return 'Tap a broad body region first, then choose a more precise close-up area if needed.';
     }
 
     return `Azul will include ${selectedBodyArea} as location context the next time you analyze your question.`;
-  }, [selectedBodyArea]);
+  }, [activeRegion, selectedBodyArea]);
+
+  const selectedLabel = activeRegion ? `${activeRegion.label} detail` : selectedBodyArea ?? 'None selected yet';
 
   return (
     <View style={styles.card}>
       <View style={styles.topRow}>
         <View style={styles.copyBlock}>
           <Text style={styles.eyebrow}>Visual Body Map</Text>
-          <Text style={styles.title}>Tap an area to add location context to your question.</Text>
+          <Text style={styles.title}>{activeRegion ? activeRegion.closeUpTitle : 'Tap an area to add location context to your question.'}</Text>
           <Text style={styles.helper}>{helperCopy}</Text>
         </View>
-        <View style={styles.toggleRow}>
-          {(['front', 'back'] as const).map((mode) => (
-            <Pressable
-              key={mode}
-              onPress={() => setViewMode(mode)}
-              style={[styles.toggleButton, viewMode === mode && styles.toggleButtonActive]}
-            >
-              <Text style={[styles.toggleLabel, viewMode === mode && styles.toggleLabelActive]}>
-                {mode === 'front' ? 'Front' : 'Back'}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
+        {!activeRegion ? (
+          <View style={styles.toggleRow}>
+            {(['front', 'back'] as const).map((mode) => (
+              <Pressable
+                key={mode}
+                onPress={() => setViewMode(mode)}
+                style={[styles.toggleButton, viewMode === mode && styles.toggleButtonActive]}
+              >
+                <Text style={[styles.toggleLabel, viewMode === mode && styles.toggleLabelActive]}>
+                  {mode === 'front' ? 'Front' : 'Back'}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
       </View>
 
       <View style={[styles.contentRow, wideLayout && styles.contentRowWide]}>
         <View style={[styles.visualPanel, wideLayout && styles.visualPanelWide]}>
-          <BodySilhouette
+          {activeRegion ? (
+            <Pressable style={styles.backButton} onPress={() => setActiveRegion(null)}>
+              <Text style={styles.backButtonLabel}>Back to Full Body</Text>
+            </Pressable>
+          ) : null}
+          <BodyMapVisual
             viewMode={viewMode}
             selectedBodyArea={selectedBodyArea}
-            onSelect={onSelect}
+            activeRegion={activeRegion}
+            onSelectRegion={(region) => {
+              setActiveRegion(region);
+              if (!selectedBodyArea) {
+                onSelect(region.label);
+              }
+            }}
+            onSelectHotspot={(hotspot) => onSelect(hotspot.displayName)}
           />
         </View>
 
         <View style={[styles.sidePanel, wideLayout && styles.sidePanelWide]}>
           <View style={styles.selectionCard}>
             <Text style={styles.selectionLabel}>Selected area</Text>
-            <Text style={styles.selectionValue}>{selectedBodyArea ?? 'None selected yet'}</Text>
+            <Text style={styles.selectionValue}>{selectedLabel}</Text>
             <Text style={styles.selectionHint}>
               The body map helps Azul localize your question. It does not auto-run analysis.
             </Text>
             {selectedBodyArea ? (
-              <Pressable onPress={onClear} style={styles.clearButton}>
+              <Pressable
+                onPress={() => {
+                  setActiveRegion(null);
+                  onClear();
+                }}
+                style={styles.clearButton}
+              >
                 <Text style={styles.clearButtonLabel}>Clear selection</Text>
               </Pressable>
             ) : null}
           </View>
 
           <View style={styles.legendCard}>
-            <Text style={styles.legendTitle}>Interactive Regions</Text>
-            <View style={styles.legendRow}>
-              <View style={styles.legendChip}>
-                <View style={styles.legendDot} />
-                <Text style={styles.legendText}>Available region</Text>
-              </View>
-              <View style={[styles.legendChip, styles.legendChipActive]}>
-                <View style={[styles.legendDot, styles.legendDotActive]} />
-                <Text style={[styles.legendText, styles.legendTextActive]}>Selected region</Text>
-              </View>
-            </View>
+            <Text style={styles.legendTitle}>{activeRegion ? 'Close-Up Selection' : 'Full Body Selection'}</Text>
+            <Text style={styles.legendBody}>
+              {activeRegion
+                ? 'Choose the most precise hotspot you can identify. The selected label is passed back into Azul as context.'
+                : 'Start with a broad region, then move into a close-up map for more precise targeting.'}
+            </Text>
           </View>
         </View>
       </View>
@@ -342,8 +423,33 @@ const styles = StyleSheet.create({
     padding: 14,
     justifyContent: 'center',
   },
+  assetCanvas: {
+    flex: 1,
+  },
+  overlaySvg: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
   visualPanelWide: {
     flex: 1.4,
+  },
+  backButton: {
+    alignSelf: 'flex-start',
+    minHeight: 36,
+    borderRadius: 999,
+    backgroundColor: 'rgba(0, 35, 102, 0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 14,
+    marginBottom: 10,
+  },
+  backButtonLabel: {
+    color: COLORS.navy,
+    fontSize: 12,
+    fontWeight: '700',
   },
   sidePanel: {
     gap: 12,
@@ -405,39 +511,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
   },
-  legendRow: {
-    gap: 8,
-  },
-  legendChip: {
-    minHeight: 42,
-    borderRadius: 14,
-    backgroundColor: COLORS.mist,
-    borderWidth: 1,
-    borderColor: COLORS.line,
-    paddingHorizontal: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  legendChipActive: {
-    backgroundColor: COLORS.navy,
-    borderColor: COLORS.gold,
-  },
-  legendDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: COLORS.navy,
-  },
-  legendDotActive: {
-    backgroundColor: COLORS.gold,
-  },
-  legendText: {
+  legendBody: {
     color: COLORS.ink,
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  legendTextActive: {
-    color: '#FFFFFF',
+    fontSize: 14,
+    lineHeight: 21,
   },
 });

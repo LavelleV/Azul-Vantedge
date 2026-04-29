@@ -5,6 +5,7 @@ import { Linking, Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, 
 import { OnboardingScreen } from './src/screens/OnboardingScreen';
 import { DisclaimerScreen } from './src/screens/DisclaimerScreen';
 import { DashboardScreen } from './src/screens/DashboardScreen';
+import { SettingsLegalScreen } from './src/screens/SettingsLegalScreen';
 import { ProtocolResponseCard } from './src/components/ProtocolResponseCard';
 import { type SavedSession } from './src/components/SessionHistory';
 import {
@@ -14,6 +15,7 @@ import {
   saveSavedSessions,
 } from './src/data/savedSessionsStorage';
 import {
+  clearDisclaimerAcknowledgment,
   loadDisclaimerAcknowledgment,
   saveDisclaimerAcknowledgment,
 } from './src/data/disclaimerStorage';
@@ -80,6 +82,7 @@ type RootStackParamList = {
   Onboarding: undefined;
   Disclaimer: undefined;
   Dashboard: undefined;
+  SettingsLegal: undefined;
 };
 
 function VibeLogModal({
@@ -306,7 +309,7 @@ export default function App() {
           )}
         </Stack.Screen>
         <Stack.Screen name="Dashboard">
-          {() => (
+          {(props) => (
             <DashboardScreen
               activeModel={activeModel}
               setActiveModel={setActiveModel}
@@ -338,6 +341,18 @@ export default function App() {
                 setSavedSessions([]);
                 setSelectedSession(null);
                 void clearSavedSessionsStorage();
+              }}
+              onOpenSettingsLegal={() => props.navigation.navigate('SettingsLegal')}
+            />
+          )}
+        </Stack.Screen>
+        <Stack.Screen name="SettingsLegal">
+          {(props) => (
+            <SettingsLegalScreen
+              onBack={() => props.navigation.goBack()}
+              onResetDisclaimerAcknowledgment={() => {
+                setHasAcknowledgedDisclaimer(false);
+                void clearDisclaimerAcknowledgment();
               }}
             />
           )}
