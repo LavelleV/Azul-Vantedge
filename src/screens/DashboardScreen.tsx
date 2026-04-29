@@ -72,10 +72,11 @@ export function DashboardScreen({
         />
         <BodyMap
           selectedBodyArea={selectedBodyArea}
+          onClear={() => setSelectedBodyArea('')}
           onSelect={(bodyArea) => {
             setSelectedBodyArea(bodyArea);
-            if (!question.includes(bodyArea)) {
-              setQuestion(question ? `${question} [Area: ${bodyArea}]` : bodyArea);
+            if (!question.trim()) {
+              setQuestion(bodyArea);
             }
           }}
         />
