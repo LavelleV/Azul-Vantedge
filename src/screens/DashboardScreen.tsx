@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { DeviceSelector } from '../components/DeviceSelector';
 import { ClinicalAgent } from '../components/ClinicalAgent';
@@ -82,13 +82,6 @@ export function DashboardScreen({
         <ReferenceGrid />
         <VibeJournal vibeJournalData={vibeJournalData} onOpen={onOpenVibeLog} />
       </ScrollView>
-      {response.recommendAssessment ? (
-        <View style={styles.floatingDock}>
-          <Pressable style={styles.floatingButton} onPress={onRequestAssessment}>
-            <Text style={styles.floatingButtonLabel}>Request Clinical Assessment with Lavelle</Text>
-          </Pressable>
-        </View>
-      ) : null}
     </SafeAreaView>
   );
 }
@@ -127,29 +120,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
-    paddingBottom: 120,
+    paddingBottom: 32,
     gap: 18,
-  },
-  floatingDock: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    bottom: 20,
-  },
-  floatingButton: {
-    minHeight: 72,
-    borderRadius: 22,
-    backgroundColor: '#002366',
-    borderWidth: 1,
-    borderColor: '#D4AF37',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 18,
-  },
-  floatingButtonLabel: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '800',
-    textAlign: 'center',
   },
 });
