@@ -678,6 +678,9 @@ function buildFallbackGuidance(input: AzulAgentInput, context: GuidanceContext):
 export async function generateAzulResponse(
   input: AzulAgentInput
 ): Promise<AzulAgentResponse> {
+  // This is the current local/mock intelligence engine used by the working app today.
+  // Future production AI should call a secure backend service and keep provider/API keys off-device.
+  // This local engine should remain available as a fallback when backend AI is unavailable.
   // Real AI/backend integration point:
   // return await backendClient.generateAzulResponse(input)
   // Keep API keys off-device and call a secure backend or edge function here.
