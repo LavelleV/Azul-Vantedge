@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Linking, Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { OnboardingScreen } from './src/screens/OnboardingScreen';
+import { DisclaimerScreen } from './src/screens/DisclaimerScreen';
 import { DashboardScreen } from './src/screens/DashboardScreen';
 import { ProtocolResponseCard } from './src/components/ProtocolResponseCard';
 import { type SavedSession } from './src/components/SessionHistory';
@@ -12,6 +13,10 @@ import {
   loadSavedSessions,
   saveSavedSessions,
 } from './src/data/savedSessionsStorage';
+import {
+  loadDisclaimerAcknowledgment,
+  saveDisclaimerAcknowledgment,
+} from './src/data/disclaimerStorage';
 import { deviceModels, type DeviceModel } from './src/data/deviceModels';
 import {
   generateAzulResponse,
@@ -73,6 +78,7 @@ function buildGuidanceSnapshot(response: AzulAgentResponse) {
 
 type RootStackParamList = {
   Onboarding: undefined;
+  Disclaimer: undefined;
   Dashboard: undefined;
 };
 
@@ -159,11 +165,14 @@ export default function App() {
   const [vibeJournalData] = useState<VibeJournalData>(defaultVibeJournal);
   const [savedSessions, setSavedSessions] = useState<SavedSession[]>([]);
   const [selectedSession, setSelectedSession] = useState<SavedSession | null>(null);
+  const [hasAcknowledgedDisclaimer, setHasAcknowledgedDisclaimer] = useState(false);
 
   useEffect(() => {
     void (async () => {
       const storedSessions = await loadSavedSessions();
+      const disclaimerAcknowledged = await loadDisclaimerAcknowledgment();
       setSavedSessions(storedSessions);
+      setHasAcknowledgedDisclaimer(disclaimerAcknowledged);
     })();
   }, []);
 
@@ -277,7 +286,22 @@ export default function App() {
               {...props}
               activeModel={activeModel}
               setActiveModel={setActiveModel}
-              onContinue={() => props.navigation.replace('Dashboard')}
+              onContinue={() =>
+                props.navigation.replace(
+                  hasAcknowledgedDisclaimer ? 'Dashboard' : 'Disclaimer'
+                )
+              }
+            />
+          )}
+        </Stack.Screen>
+        <Stack.Screen name="Disclaimer">
+          {(props) => (
+            <DisclaimerScreen
+              onContinue={() => {
+                setHasAcknowledgedDisclaimer(true);
+                void saveDisclaimerAcknowledgment();
+                props.navigation.replace('Dashboard');
+              }}
             />
           )}
         </Stack.Screen>
