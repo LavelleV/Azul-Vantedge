@@ -301,8 +301,18 @@ export default function App() {
               onRequestAssessment={handleRequestAssessment}
               sessions={savedSessions}
               onOpenSession={setSelectedSession}
+              onDeleteSession={(session) => {
+                setSavedSessions((current) => {
+                  const nextSessions = current.filter((item) => item.id !== session.id);
+                  void saveSavedSessions(nextSessions);
+                  return nextSessions;
+                });
+
+                setSelectedSession((current) => (current?.id === session.id ? null : current));
+              }}
               onClearHistory={() => {
                 setSavedSessions([]);
+                setSelectedSession(null);
                 void clearSavedSessionsStorage();
               }}
             />

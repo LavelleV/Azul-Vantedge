@@ -29,6 +29,7 @@ export function DashboardScreen({
   onRequestAssessment,
   sessions,
   onOpenSession,
+  onDeleteSession,
   onClearHistory,
 }: {
   activeModel: DeviceModel;
@@ -48,6 +49,7 @@ export function DashboardScreen({
   onRequestAssessment: () => void;
   sessions: SavedSession[];
   onOpenSession: (session: SavedSession) => void;
+  onDeleteSession: (session: SavedSession) => void;
   onClearHistory: () => void;
 }) {
   return (
@@ -90,6 +92,7 @@ export function DashboardScreen({
         <SessionHistory
           sessions={sessions}
           onOpen={onOpenSession}
+          onDelete={onDeleteSession}
           onClear={onClearHistory}
         />
         <ReferenceGrid

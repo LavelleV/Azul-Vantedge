@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { DeviceModel } from '../data/deviceModels';
 import type { AzulAgentResponse, UserMode, VibeJournalData } from '../services/azulAgent';
 
@@ -62,15 +62,38 @@ export function SessionHistory({
   sessions,
   onOpen,
   onClear,
+  onDelete,
 }: {
   sessions: SavedSession[];
   onOpen: (session: SavedSession) => void;
   onClear: () => void;
+  onDelete: (session: SavedSession) => void;
 }) {
   const handleClear = () => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      if (window.confirm('Remove all saved session history from this device view?')) {
+        onClear();
+      }
+      return;
+    }
+
     Alert.alert('Clear Session History', 'Remove all saved session history from this device view?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Clear', style: 'destructive', onPress: onClear },
+    ]);
+  };
+
+  const handleDelete = (session: SavedSession) => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      if (window.confirm('Delete this saved session?')) {
+        onDelete(session);
+      }
+      return;
+    }
+
+    Alert.alert('Delete Saved Session', 'Delete this saved session?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => onDelete(session) },
     ]);
   };
 
@@ -96,9 +119,14 @@ export function SessionHistory({
             <View key={session.id} style={styles.sessionCard}>
               <View style={styles.sessionTopRow}>
                 <Text style={styles.timestamp}>{formatTimestamp(session.createdAt)}</Text>
-                <Pressable style={styles.openButton} onPress={() => onOpen(session)}>
-                  <Text style={styles.openButtonLabel}>View</Text>
-                </Pressable>
+                <View style={styles.actionRow}>
+                  <Pressable style={styles.deleteButton} onPress={() => handleDelete(session)}>
+                    <Text style={styles.deleteButtonLabel}>Delete</Text>
+                  </Pressable>
+                  <Pressable style={styles.openButton} onPress={() => onOpen(session)}>
+                    <Text style={styles.openButtonLabel}>View</Text>
+                  </Pressable>
+                </View>
               </View>
 
               <Text style={styles.questionPreview} numberOfLines={2}>
@@ -188,6 +216,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   timestamp: {
     color: '#002366',
     fontSize: 12,
@@ -255,6 +288,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 16,
+  },
+  deleteButton: {
+    minHeight: 38,
+    borderRadius: 14,
+    backgroundColor: 'rgba(0, 35, 102, 0.06)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+  },
+  deleteButtonLabel: {
+    color: '#5F6C84',
+    fontSize: 12,
+    fontWeight: '700',
   },
   openButtonLabel: {
     color: '#FFFFFF',
