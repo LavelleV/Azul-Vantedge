@@ -341,6 +341,63 @@ function buildHamstringGuidance(input: AzulAgentInput, context: GuidanceContext)
   return response;
 }
 
+function buildHipGluteGuidance(input: AzulAgentInput, context: GuidanceContext): AzulAgentResponse {
+  const nerveLike = hasTerm(context.normalizedQuestion, ['burning', 'tingling', 'sharp', 'travels down the leg', 'down the leg']);
+  const siLike = hasTerm(context.normalizedQuestion, ['si', 'sacroiliac', 'low back dimple', 'hip dimple']);
+  const response = buildBaseResponse();
+  response.clinicalRead = [
+    'This sounds like a hip/glute interface issue.',
+    'The stiffness tells us the tissue may be guarding or not sliding smoothly.',
+    'The pain in the cheek area often points toward the glute or piriformis region, especially when sitting, walking, or rotating the hip feels restricted. This does not diagnose the issue, but it gives us a smart starting point.',
+  ];
+  response.bestStartingProtocol = [
+    'Primary: #21 Fascia Heal — use this first when the hip feels stiff, stuck, guarded, or restricted. The goal is to support smoother glide through the hip and glute tissue.',
+    'Add-on: #20 Muscle Strain/Injury — use this if the pain feels more muscular, like a pull, ache, or soreness in the glute or deep buttock area.',
+    'Optional sequence: Run #21 first, then #20 if the stiffness improves but the glute still feels sore or strained.',
+    'Nerve option: #24 Quick Jet/General Pain — consider this only if the pain feels sharp, burning, tingling, or travels down the leg.',
+    'SI option: #15 SI & Facet Pain — consider this if the pain feels like it starts near the low-back dimple or sacroiliac joint instead of the middle of the butt cheek.',
+    context.homeModel
+      ? 'Professional option: With the Home Model, this is supportive guidance. If pain travels down the leg, weakness is present, numbness increases, or the hip keeps locking up, request a clinical assessment with Lavelle or medical evaluation.'
+      : 'Professional option: If the pattern becomes more nerve-like, unstable, or function-limiting, broaden the plan and consider Lavelle assessment for deeper sequencing.',
+  ];
+  response.padPlacement = [
+    'Pad 1: Place one pad directly on the sore area of the butt cheek or deep glute where the pain feels most centered. This is the Glute / Piriformis region.',
+    'Pad 2: Place the second pad on the side of the same hip, near the outer hip bone. This is the Greater Trochanter / lateral hip area.',
+    'Optional placement: If the pain travels down the back of the leg, move Pad 2 lower onto the back of the upper thigh. This follows the hamstring / sciatic pathway.',
+    'SI variation: If the pain feels closer to the low-back dimple, place Pad 1 on that sore dimple area. This is the SI Joint / Sacroiliac area. Place Pad 2 on the front of the same-side hip near the front hip bone. This is the ASIS / anterior hip area.',
+  ];
+  response.whyThisPlacement = [
+    'This creates a bridge through the hip and glute area instead of treating only one surface spot.',
+    'The goal is to let the current pass through the guarded tissue and support a calmer signal through the hip, glute, and deep rotator area.',
+  ];
+  response.sessionTips = [
+    'Keep intensity comfortable and sub-sensory.',
+    'Do not force deep stretching before the tissue calms.',
+    'Use gentle hip circles, walking, or easy range of motion after the session.',
+    'Avoid aggressive pressure directly on a highly irritated butt-cheek point.',
+    'Stop and reassess if symptoms worsen.',
+    `Latest Vibe pattern: ${context.vibeSummary}.`,
+  ];
+  response.aftercare = [
+    'Recheck sitting comfort, walking comfort, and hip rotation later the same day.',
+    'Recheck again the next morning.',
+    'If pain travels down the leg, numbness increases, or weakness appears, escalate.',
+  ];
+  response.escalation = [
+    'Request Clinical Assessment with Lavelle if the hip keeps locking up, pain is traveling down the leg, numbness is increasing, or supportive guidance is not enough.',
+  ];
+  response.recommendAssessment = context.notImproving || context.homeModel || nerveLike || siLike;
+
+  if (context.practitioner) {
+    return withMassageIntegration(response, [
+      'Massage Integration: Let the device run while you work broad gluteal, lateral hip, and deep rotator support tissue rather than drilling directly into the most irritated butt-cheek point.',
+      'Massage Integration: If the pattern shifts toward SI or sciatic irritation, keep the work broad and reassess after each pass instead of forcing deep release.',
+    ]);
+  }
+
+  return response;
+}
+
 function buildAnkleGuidance(input: AzulAgentInput, context: GuidanceContext): AzulAgentResponse {
   const vascular = hasTerm(context.normalizedQuestion, ['purple', 'dark', 'venous', 'circulation', 'puffy', 'swollen']);
   const nerve = hasTerm(context.normalizedQuestion, ['neuropathy', 'nerve', 'burning', 'tingling']);
@@ -486,6 +543,88 @@ function buildBrainGuidance(input: AzulAgentInput, context: GuidanceContext): Az
 }
 
 function buildFallbackGuidance(input: AzulAgentInput, context: GuidanceContext): AzulAgentResponse {
+  if (context.selectedBodyArea === 'Shoulder') {
+    return buildRotatorCuffGuidance({ ...input, userQuestion: `${input.userQuestion} shoulder` }, context);
+  }
+
+  if (context.selectedBodyArea === 'Knee') {
+    return buildKneeGuidance({ ...input, userQuestion: `${input.userQuestion} knee` }, context);
+  }
+
+  if (context.selectedBodyArea === 'Ankle / Foot') {
+    return buildAnkleGuidance({ ...input, userQuestion: `${input.userQuestion} ankle` }, context);
+  }
+
+  if (context.selectedBodyArea === 'Hip') {
+    return buildHipGluteGuidance({ ...input, userQuestion: `${input.userQuestion} hip glute` }, context);
+  }
+
+  if (context.selectedBodyArea === 'Low Back / SI') {
+    return buildSIGuidance({ ...input, userQuestion: `${input.userQuestion} si joint low back` }, context);
+  }
+
+  if (context.selectedBodyArea === 'Head / Brain') {
+    return buildBrainGuidance({ ...input, userQuestion: `${input.userQuestion} brain focus` }, context);
+  }
+
+  if (context.selectedBodyArea === 'Neck') {
+    return buildAnxietyGuidance({ ...input, userQuestion: `${input.userQuestion} stress neck` }, context);
+  }
+
+  if (context.selectedBodyArea === 'Abdomen / Gut') {
+    const response = buildBaseResponse();
+    response.clinicalRead = [
+      'This sounds like a body-area question centered around the abdomen or gut region.',
+      'Abdominal symptoms should be approached conservatively. This does not diagnose the issue, but it tells us to stay measured and safety-aware.',
+    ];
+    response.bestStartingProtocol = [
+      'Primary: Use conservative educational guidance first rather than aggressive protocol assumptions.',
+      'Professional option: If abdominal discomfort is significant, unusual, or worsening, request Clinical Assessment with Lavelle and consider medical evaluation.',
+    ];
+    response.padPlacement = [
+      'Pad 1: If using supportive wellness placement, place one pad on the upper abdomen away from sharp or highly tender points.',
+      'Pad 2: Place the second pad lower on the abdomen with enough space to avoid crowding one sore spot.',
+    ];
+    response.whyThisPlacement = [
+      'The goal is to keep the setup broad and calm rather than over-focusing on abdominal discomfort.',
+    ];
+    response.sessionTips = [
+      'Keep intensity very comfortable, stay conservative, and stop if symptoms worsen or feel unusual.',
+      `Latest Vibe pattern: ${context.vibeSummary}.`,
+    ];
+    response.aftercare = ['Reassess comfort carefully and escalate if the pattern feels more serious or persistent.'];
+    response.escalation = ['Request Clinical Assessment with Lavelle or medical evaluation for meaningful abdominal pain, worsening symptoms, or any concerning change.'];
+    response.recommendAssessment = true;
+    return response;
+  }
+
+  if (context.selectedBodyArea === 'Full Body / Systemic') {
+    const response = buildBaseResponse();
+    response.clinicalRead = [
+      'This sounds like a more whole-body or systemic support question rather than one single local tissue issue.',
+      'That often calls for a broader recovery and regulation plan instead of a spot treatment mindset.',
+    ];
+    response.bestStartingProtocol = [
+      'Primary: #84 Full Body Inflammation/Systemic Reset — use this when the person describes fatigue, heaviness, or whole-body inflammatory load.',
+      'Add-on: #58 Nervous System Reset — use this next if stress overload is clearly part of the systemic picture.',
+    ];
+    response.padPlacement = [
+      'Pad 1: Place one pad on the upper body where broad regulation feels comfortable, often upper torso or back of neck support.',
+      'Pad 2: Place the second pad on the lower body to create a larger top-to-bottom support field.',
+    ];
+    response.whyThisPlacement = [
+      'This supports a broader systemic field rather than focusing only on one local area.',
+    ];
+    response.sessionTips = [
+      'Keep intensity conservative, hydrate well, and assess whether the body feels calmer, clearer, or less heavy over time.',
+      `Latest Vibe pattern: ${context.vibeSummary}.`,
+    ];
+    response.aftercare = ['Reassess whole-body energy, heaviness, and recovery later the same day and the next morning.'];
+    response.escalation = ['Request Clinical Assessment with Lavelle if the whole-body picture is complex, not improving, or feels too layered for self-guided support.'];
+    response.recommendAssessment = context.notImproving || context.homeModel;
+    return response;
+  }
+
   const response = buildBaseResponse();
   response.clinicalRead = [
     'The wording suggests a real clinical-wellness question rather than a simple preset category, which is exactly how Azul is intended to be used.',
@@ -564,6 +703,10 @@ export async function generateAzulResponse(
 
   if (hasTerm(q, ['hamstring', 'butt cheek crease', 'sit bone', 'ischial tuberosity'])) {
     return buildHamstringGuidance(input, context);
+  }
+
+  if (hasTerm(q, ['hip', 'glute', 'butt', 'buttock', 'cheek', 'butt cheek', 'piriformis', 'deep hip', 'side hip', 'hip stiffness', 'hip pain', 'glute pain', 'sitting pain'])) {
+    return buildHipGluteGuidance(input, context);
   }
 
   if (hasTerm(q, ['ankle', 'inner ankle', 'neuropathy', 'venous', 'purple', 'dark', 'swollen', 'puffy', 'circulation'])) {
