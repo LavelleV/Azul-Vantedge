@@ -4,10 +4,9 @@ import Svg, { Circle, Ellipse, G, Path, Rect } from 'react-native-svg';
 
 type BodyRegion = {
   key: string;
-  label: string;
   frontOnly?: boolean;
   backOnly?: boolean;
-  shape: 'circle' | 'rect' | 'ellipse';
+  kind: 'circle' | 'rect' | 'ellipse';
   x: number;
   y: number;
   width?: number;
@@ -16,33 +15,36 @@ type BodyRegion = {
 };
 
 const REGIONS: BodyRegion[] = [
-  { key: 'Head / Brain', label: 'Head / Brain', shape: 'circle', x: 100, y: 42, r: 18 },
-  { key: 'Neck', label: 'Neck', shape: 'rect', x: 90, y: 66, width: 20, height: 16 },
-  { key: 'Shoulder', label: 'Shoulder', shape: 'rect', x: 48, y: 84, width: 104, height: 24 },
-  { key: 'Abdomen / Gut', label: 'Abdomen / Gut', shape: 'ellipse', x: 100, y: 150, width: 54, height: 36, frontOnly: true },
-  { key: 'Low Back / SI', label: 'Low Back / SI', shape: 'ellipse', x: 100, y: 165, width: 62, height: 30, backOnly: true },
-  { key: 'Hip', label: 'Hip', shape: 'rect', x: 62, y: 188, width: 76, height: 22 },
-  { key: 'Knee', label: 'Knee', shape: 'rect', x: 70, y: 276, width: 60, height: 22 },
-  { key: 'Ankle / Foot', label: 'Ankle / Foot', shape: 'rect', x: 66, y: 360, width: 68, height: 20 },
-  { key: 'Full Body / Systemic', label: 'Full Body / Systemic', shape: 'rect', x: 44, y: 392, width: 112, height: 24 },
+  { key: 'Head / Brain', kind: 'circle', x: 110, y: 46, r: 24 },
+  { key: 'Neck', kind: 'rect', x: 98, y: 74, width: 24, height: 18 },
+  { key: 'Shoulder', kind: 'rect', x: 46, y: 96, width: 128, height: 28 },
+  { key: 'Abdomen / Gut', kind: 'ellipse', x: 110, y: 182, width: 70, height: 48, frontOnly: true },
+  { key: 'Low Back / SI', kind: 'ellipse', x: 110, y: 200, width: 82, height: 40, backOnly: true },
+  { key: 'Hip', kind: 'rect', x: 62, y: 232, width: 96, height: 28 },
+  { key: 'Knee', kind: 'rect', x: 74, y: 352, width: 72, height: 26 },
+  { key: 'Ankle / Foot', kind: 'rect', x: 70, y: 466, width: 80, height: 22 },
+  { key: 'Full Body / Systemic', kind: 'rect', x: 40, y: 506, width: 140, height: 26 },
 ];
 
 const COLORS = {
   navy: '#002366',
   gold: '#D4AF37',
-  slate: '#5F6C84',
+  slate: '#60718D',
   ink: '#474747',
   mist: '#EEF3F8',
-  line: 'rgba(0, 35, 102, 0.16)',
-  body: '#C7D3E1',
-  bodyDark: '#B8C5D6',
+  line: 'rgba(0, 35, 102, 0.15)',
+  lineStrong: 'rgba(0, 35, 102, 0.28)',
+  body: '#D0DAE6',
+  bodyShadow: '#BCC8D8',
+  bodyHighlight: '#E5ECF4',
 };
 
-function renderRegion(region: BodyRegion, active: boolean, onSelect: (key: string) => void) {
-  const fill = active ? 'rgba(212, 175, 55, 0.88)' : 'rgba(0, 35, 102, 0.10)';
-  const stroke = active ? COLORS.navy : COLORS.line;
+function drawRegion(region: BodyRegion, active: boolean, onSelect: (key: string) => void) {
+  const fill = active ? 'rgba(212, 175, 55, 0.90)' : 'rgba(0, 35, 102, 0.08)';
+  const stroke = active ? COLORS.navy : COLORS.lineStrong;
+  const strokeWidth = active ? 2.6 : 1.3;
 
-  if (region.shape === 'circle') {
+  if (region.kind === 'circle') {
     return (
       <Circle
         key={region.key}
@@ -51,13 +53,13 @@ function renderRegion(region: BodyRegion, active: boolean, onSelect: (key: strin
         r={region.r}
         fill={fill}
         stroke={stroke}
-        strokeWidth={active ? 2.4 : 1.4}
+        strokeWidth={strokeWidth}
         onPress={() => onSelect(region.key)}
       />
     );
   }
 
-  if (region.shape === 'ellipse') {
+  if (region.kind === 'ellipse') {
     return (
       <Ellipse
         key={region.key}
@@ -67,7 +69,7 @@ function renderRegion(region: BodyRegion, active: boolean, onSelect: (key: strin
         ry={(region.height ?? 0) / 2}
         fill={fill}
         stroke={stroke}
-        strokeWidth={active ? 2.4 : 1.4}
+        strokeWidth={strokeWidth}
         onPress={() => onSelect(region.key)}
       />
     );
@@ -80,12 +82,71 @@ function renderRegion(region: BodyRegion, active: boolean, onSelect: (key: strin
       y={region.y}
       width={region.width}
       height={region.height}
-      rx={region.height ? region.height / 2 : 10}
+      rx={(region.height ?? 18) / 2}
       fill={fill}
       stroke={stroke}
-      strokeWidth={active ? 2.4 : 1.4}
+      strokeWidth={strokeWidth}
       onPress={() => onSelect(region.key)}
     />
+  );
+}
+
+function FrontBodyBase() {
+  return (
+    <G>
+      <Circle cx="110" cy="46" r="29" fill={COLORS.bodyHighlight} />
+      <Circle cx="110" cy="46" r="27" fill={COLORS.body} />
+      <Rect x="100" y="72" width="20" height="22" rx="9" fill={COLORS.bodyShadow} />
+      <Path
+        d="M62 108 C72 88, 88 84, 110 84 C132 84, 148 88, 158 108 L166 142 C164 152, 156 160, 144 164 L138 250 C130 258, 122 262, 110 262 C98 262, 90 258, 82 250 L76 164 C64 160, 56 152, 54 142 Z"
+        fill={COLORS.body}
+      />
+      <Path
+        d="M76 116 C86 106, 96 104, 110 104 C124 104, 134 106, 144 116 L150 146 C146 150, 140 152, 132 152 L128 210 C122 216, 116 220, 110 220 C104 220, 98 216, 92 210 L88 152 C80 152, 74 150, 70 146 Z"
+        fill={COLORS.bodyHighlight}
+        opacity="0.45"
+      />
+      <Path d="M76 122 L48 234 L62 238 L92 136 Z" fill={COLORS.bodyShadow} />
+      <Path d="M144 122 L172 234 L158 238 L128 136 Z" fill={COLORS.bodyShadow} />
+      <Path d="M82 250 L68 376 L86 380 L100 260 Z" fill={COLORS.body} />
+      <Path d="M138 250 L120 260 L134 380 L152 376 Z" fill={COLORS.body} />
+      <Path d="M70 378 L62 468 L82 470 L90 382 Z" fill={COLORS.bodyShadow} />
+      <Path d="M150 376 L140 382 L148 470 L168 468 Z" fill={COLORS.bodyShadow} />
+      <Path d="M60 470 C68 478, 80 482, 96 480" stroke={COLORS.bodyShadow} strokeWidth="12" strokeLinecap="round" fill="none" />
+      <Path d="M124 480 C140 482, 152 478, 160 470" stroke={COLORS.bodyShadow} strokeWidth="12" strokeLinecap="round" fill="none" />
+      <Path d="M92 170 C98 178, 102 182, 110 182 C118 182, 122 178, 128 170" stroke={COLORS.line} strokeWidth="1.2" fill="none" />
+      <Path d="M96 206 C100 212, 104 214, 110 214 C116 214, 120 212, 124 206" stroke={COLORS.line} strokeWidth="1.2" fill="none" />
+    </G>
+  );
+}
+
+function BackBodyBase() {
+  return (
+    <G>
+      <Circle cx="110" cy="46" r="29" fill={COLORS.bodyHighlight} />
+      <Circle cx="110" cy="46" r="27" fill={COLORS.body} />
+      <Rect x="100" y="72" width="20" height="22" rx="9" fill={COLORS.bodyShadow} />
+      <Path
+        d="M64 110 C74 90, 90 84, 110 84 C130 84, 146 90, 156 110 L164 150 C160 158, 152 164, 142 168 L136 250 C128 260, 120 264, 110 264 C100 264, 92 260, 84 250 L78 168 C68 164, 60 158, 56 150 Z"
+        fill={COLORS.body}
+      />
+      <Path
+        d="M86 118 C94 108, 102 106, 110 106 C118 106, 126 108, 134 118 L138 152 C130 158, 122 162, 110 162 C98 162, 90 158, 82 152 Z"
+        fill={COLORS.bodyHighlight}
+        opacity="0.42"
+      />
+      <Path d="M78 126 L52 234 L66 238 L94 138 Z" fill={COLORS.bodyShadow} />
+      <Path d="M142 126 L168 234 L154 238 L126 138 Z" fill={COLORS.bodyShadow} />
+      <Path d="M84 252 L70 376 L88 380 L102 262 Z" fill={COLORS.body} />
+      <Path d="M136 252 L118 262 L132 380 L150 376 Z" fill={COLORS.body} />
+      <Path d="M72 378 L64 468 L84 470 L92 382 Z" fill={COLORS.bodyShadow} />
+      <Path d="M148 376 L138 382 L146 470 L166 468 Z" fill={COLORS.bodyShadow} />
+      <Path d="M62 470 C70 478, 82 482, 98 480" stroke={COLORS.bodyShadow} strokeWidth="12" strokeLinecap="round" fill="none" />
+      <Path d="M122 480 C138 482, 150 478, 158 470" stroke={COLORS.bodyShadow} strokeWidth="12" strokeLinecap="round" fill="none" />
+      <Path d="M110 110 L110 246" stroke={COLORS.lineStrong} strokeWidth="1.2" opacity="0.55" />
+      <Path d="M88 188 C94 182, 100 180, 110 180 C120 180, 126 182, 132 188" stroke={COLORS.line} strokeWidth="1.2" fill="none" />
+      <Path d="M90 210 C96 220, 102 224, 110 224 C118 224, 124 220, 130 210" stroke={COLORS.line} strokeWidth="1.2" fill="none" />
+    </G>
   );
 }
 
@@ -109,30 +170,13 @@ function BodySilhouette({
   });
 
   return (
-    <Svg width="100%" height="100%" viewBox="0 0 200 430">
+    <Svg width="100%" height="100%" viewBox="0 0 220 540">
       <G>
-        <Circle cx="100" cy="42" r="24" fill={COLORS.body} />
-        <Rect x="90" y="66" width="20" height="18" rx="8" fill={COLORS.bodyDark} />
-        <Path
-          d="M58 92 C70 78, 84 76, 100 76 C116 76, 130 78, 142 92 L150 124 C146 134, 138 138, 128 140 L124 202 C118 210, 110 214, 100 214 C90 214, 82 210, 76 202 L72 140 C62 138, 54 134, 50 124 Z"
-          fill={COLORS.body}
-        />
-        <Path
-          d="M72 214 C80 224, 88 228, 100 228 C112 228, 120 224, 128 214 L136 246 C128 256, 116 260, 100 260 C84 260, 72 256, 64 246 Z"
-          fill={COLORS.bodyDark}
-        />
-        <Path d="M68 112 L44 184 L56 188 L80 122 Z" fill={COLORS.bodyDark} />
-        <Path d="M132 112 L156 184 L144 188 L120 122 Z" fill={COLORS.bodyDark} />
-        <Path d="M74 246 L62 334 L78 338 L90 254 Z" fill={COLORS.body} />
-        <Path d="M126 246 L110 254 L122 338 L138 334 Z" fill={COLORS.body} />
-        <Path d="M64 338 L56 382 L74 384 L80 340 Z" fill={COLORS.bodyDark} />
-        <Path d="M136 338 L126 340 L132 384 L150 382 Z" fill={COLORS.bodyDark} />
-        <Path d="M54 384 C56 392, 66 396, 80 394" stroke={COLORS.bodyDark} strokeWidth="10" strokeLinecap="round" fill="none" />
-        <Path d="M120 394 C134 396, 144 392, 146 384" stroke={COLORS.bodyDark} strokeWidth="10" strokeLinecap="round" fill="none" />
+        <Rect x="10" y="10" width="200" height="520" rx="34" fill="#F7FAFD" />
       </G>
-
+      {viewMode === 'front' ? <FrontBodyBase /> : <BackBodyBase />}
       <G>
-        {visibleRegions.map((region) => renderRegion(region, selectedBodyArea === region.key, onSelect))}
+        {visibleRegions.map((region) => drawRegion(region, selectedBodyArea === region.key, onSelect))}
       </G>
     </Svg>
   );
@@ -153,7 +197,7 @@ export function BodyMap({
 
   const helperCopy = useMemo(() => {
     if (!selectedBodyArea) {
-      return 'Tap the silhouette to add location context before you analyze.';
+      return 'Tap the anatomical silhouette to add location context before you analyze.';
     }
 
     return `Azul will include ${selectedBodyArea} as location context the next time you analyze your question.`;
@@ -290,22 +334,22 @@ const styles = StyleSheet.create({
     alignItems: 'stretch',
   },
   visualPanel: {
-    height: 500,
-    borderRadius: 28,
+    height: 620,
+    borderRadius: 30,
     backgroundColor: COLORS.mist,
     borderWidth: 1,
     borderColor: COLORS.line,
-    padding: 12,
+    padding: 14,
     justifyContent: 'center',
   },
   visualPanelWide: {
-    flex: 1.35,
+    flex: 1.4,
   },
   sidePanel: {
     gap: 12,
   },
   sidePanelWide: {
-    flex: 0.85,
+    flex: 0.8,
   },
   selectionCard: {
     borderRadius: 22,
