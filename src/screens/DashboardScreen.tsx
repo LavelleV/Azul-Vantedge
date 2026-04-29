@@ -5,6 +5,7 @@ import { DeviceSelector } from '../components/DeviceSelector';
 import { ClinicalAgent } from '../components/ClinicalAgent';
 import { ProtocolResponseCard } from '../components/ProtocolResponseCard';
 import { BodyMap } from '../components/BodyMap';
+import { SessionHistory, type SavedSession } from '../components/SessionHistory';
 import { ReferenceGrid } from '../components/ReferenceGrid';
 import { VibeJournal } from '../components/VibeJournal';
 import type { DeviceModel } from '../data/deviceModels';
@@ -26,6 +27,9 @@ export function DashboardScreen({
   vibeJournalData,
   onOpenVibeLog,
   onRequestAssessment,
+  sessions,
+  onOpenSession,
+  onClearHistory,
 }: {
   activeModel: DeviceModel;
   setActiveModel: (model: DeviceModel) => void;
@@ -42,6 +46,9 @@ export function DashboardScreen({
   vibeJournalData: VibeJournalData;
   onOpenVibeLog: () => void;
   onRequestAssessment: () => void;
+  sessions: SavedSession[];
+  onOpenSession: (session: SavedSession) => void;
+  onClearHistory: () => void;
 }) {
   return (
     <SafeAreaView style={styles.screen}>
@@ -79,6 +86,11 @@ export function DashboardScreen({
               setQuestion(bodyArea);
             }
           }}
+        />
+        <SessionHistory
+          sessions={sessions}
+          onOpen={onOpenSession}
+          onClear={onClearHistory}
         />
         <ReferenceGrid />
         <VibeJournal vibeJournalData={vibeJournalData} onOpen={onOpenVibeLog} />

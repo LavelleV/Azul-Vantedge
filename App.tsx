@@ -4,6 +4,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Linking, Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { OnboardingScreen } from './src/screens/OnboardingScreen';
 import { DashboardScreen } from './src/screens/DashboardScreen';
+import { ProtocolResponseCard } from './src/components/ProtocolResponseCard';
+import { type SavedSession } from './src/components/SessionHistory';
 import { deviceModels, type DeviceModel } from './src/data/deviceModels';
 import {
   generateAzulResponse,
@@ -75,6 +77,46 @@ function VibeLogModal({
   );
 }
 
+function SavedSessionModal({
+  session,
+  visible,
+  onClose,
+  onRequestAssessment,
+}: {
+  session: SavedSession | null;
+  visible: boolean;
+  onClose: () => void;
+  onRequestAssessment: () => void;
+}) {
+  if (!session) {
+    return null;
+  }
+
+  return (
+    <Modal visible={visible} transparent animationType="slide">
+      <View style={styles.modalBackdrop}>
+        <View style={styles.viewerCard}>
+          <Text style={styles.modalEyebrow}>Saved Session</Text>
+          <Text style={styles.viewerTitle}>{session.question}</Text>
+          <Text style={styles.viewerMeta}>
+            {new Date(session.createdAt).toLocaleDateString()} {new Date(session.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} • {session.selectedBodyArea || 'No body area tagged'} • {session.activeDeviceModel}
+          </Text>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <ProtocolResponseCard
+              response={session.response}
+              isLoading={false}
+              onRequestAssessment={onRequestAssessment}
+            />
+          </ScrollView>
+          <Pressable style={styles.modalButton} onPress={onClose}>
+            <Text style={styles.modalButtonLabel}>Close</Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 export default function App() {
   const [activeModel, setActiveModel] = useState<DeviceModel>(deviceModels[0]);
   const [userMode, setUserMode] = useState<UserMode>('client');
@@ -84,6 +126,8 @@ export default function App() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [vibeVisible, setVibeVisible] = useState(false);
   const [vibeJournalData] = useState<VibeJournalData>(defaultVibeJournal);
+  const [savedSessions, setSavedSessions] = useState<SavedSession[]>([]);
+  const [selectedSession, setSelectedSession] = useState<SavedSession | null>(null);
 
   const handleAnalyze = async () => {
     const userQuestion = question.trim();
@@ -103,6 +147,19 @@ export default function App() {
     });
 
     setResponse(nextResponse);
+    setSavedSessions((current) => [
+      {
+        id: `${Date.now()}`,
+        createdAt: new Date().toISOString(),
+        question: userQuestion,
+        selectedBodyArea,
+        activeDeviceModel: activeModel,
+        userMode,
+        response: nextResponse,
+        vibeJournalData,
+      },
+      ...current,
+    ]);
     setIsAnalyzing(false);
   };
 
@@ -137,6 +194,12 @@ export default function App() {
         onClose={() => setVibeVisible(false)}
         vibeJournalData={vibeJournalData}
       />
+      <SavedSessionModal
+        session={selectedSession}
+        visible={!!selectedSession}
+        onClose={() => setSelectedSession(null)}
+        onRequestAssessment={handleRequestAssessment}
+      />
       <Stack.Navigator screenOptions={{ headerShown: false, animation: 'fade' }}>
         <Stack.Screen name="Onboarding">
           {(props) => (
@@ -166,6 +229,9 @@ export default function App() {
               vibeJournalData={vibeJournalData}
               onOpenVibeLog={() => setVibeVisible(true)}
               onRequestAssessment={handleRequestAssessment}
+              sessions={savedSessions}
+              onOpenSession={setSelectedSession}
+              onClearHistory={() => setSavedSessions([])}
             />
           )}
         </Stack.Screen>
@@ -223,5 +289,24 @@ const styles = StyleSheet.create({
     color: '#002366',
     fontSize: 15,
     fontWeight: '800',
+  },
+  viewerCard: {
+    maxHeight: '86%',
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    padding: 20,
+    gap: 14,
+  },
+  viewerTitle: {
+    color: '#002366',
+    fontSize: 22,
+    lineHeight: 28,
+    fontWeight: '700',
+  },
+  viewerMeta: {
+    color: '#5F6C84',
+    fontSize: 13,
+    lineHeight: 19,
   },
 });
