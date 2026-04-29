@@ -46,6 +46,31 @@ const defaultResponse: AzulAgentResponse = {
   recommendAssessment: false,
 };
 
+function appendSection(lines: string[], title: string, items: string[]) {
+  const filtered = items.filter(Boolean);
+  if (!filtered.length) {
+    return;
+  }
+
+  lines.push(`${title}:`);
+  filtered.forEach((item) => lines.push(item));
+  lines.push('');
+}
+
+function buildGuidanceSnapshot(response: AzulAgentResponse) {
+  const lines: string[] = [];
+
+  appendSection(lines, 'Clinical Read', response.clinicalRead);
+  appendSection(lines, 'Protocol Plan', response.bestStartingProtocol);
+  appendSection(lines, 'Pad Placement', response.padPlacement);
+  appendSection(lines, 'Why This Placement', response.whyThisPlacement);
+  appendSection(lines, 'Session Tips', response.sessionTips);
+  appendSection(lines, 'Aftercare', response.aftercare);
+  appendSection(lines, 'Escalation', response.escalation);
+
+  return lines.join('\n').trim();
+}
+
 type RootStackParamList = {
   Onboarding: undefined;
   Dashboard: undefined;
@@ -188,17 +213,37 @@ export default function App() {
 
   const handleRequestAssessment = async () => {
     const subject = encodeURIComponent('Azul Vantedge Clinical Assessment Request');
-    const body = encodeURIComponent(
-      [
-        'I would like Lavelle to review this Azul Vantedge guidance and advise whether I need a clinical assessment.',
-        '',
-        `User question: ${question || 'Not provided'}`,
-        `Selected body area: ${selectedBodyArea || 'Not tagged'}`,
-        `Active device model: ${activeModel}`,
-        `User mode: ${userMode}`,
-        `Latest vibe: Pain ${vibeJournalData.painBefore}/${vibeJournalData.painAfter}, Focus ${vibeJournalData.focusBefore}/${vibeJournalData.focusAfter}, Stress ${vibeJournalData.stressBefore}/${vibeJournalData.stressAfter}`,
-      ].join('\n')
-    );
+    const guidanceSnapshot = buildGuidanceSnapshot(response);
+    const emailLines = [
+      'I would like Lavelle to review this Azul Vantedge guidance and advise whether I need a clinical assessment.',
+      '',
+      'User question:',
+      question || 'Not provided',
+      '',
+      'Selected body area:',
+      selectedBodyArea || 'None',
+      '',
+      'Active device model:',
+      activeModel,
+      '',
+      'User mode:',
+      userMode,
+      '',
+      'Latest vibe:',
+      `Pain ${vibeJournalData.painBefore}/${vibeJournalData.painAfter}, Focus ${vibeJournalData.focusBefore}/${vibeJournalData.focusAfter}, Stress ${vibeJournalData.stressBefore}/${vibeJournalData.stressAfter}`,
+      '',
+    ];
+
+    appendSection(emailLines, 'Protocol Plan Summary', response.bestStartingProtocol);
+    appendSection(emailLines, 'Pad Placement Summary', response.padPlacement);
+    appendSection(emailLines, 'Escalation Reason', response.escalation);
+
+    if (guidanceSnapshot) {
+      emailLines.push('Full Azul Guidance Snapshot:');
+      emailLines.push(guidanceSnapshot);
+    }
+
+    const body = encodeURIComponent(emailLines.join('\n'));
 
     const emailUrl = `mailto:justowntoday@gmail.com?subject=${subject}&body=${body}`;
 
