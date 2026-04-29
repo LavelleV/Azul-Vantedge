@@ -187,20 +187,29 @@ export default function App() {
   };
 
   const handleRequestAssessment = async () => {
-    const smsBody = encodeURIComponent(
+    const subject = encodeURIComponent('Azul Vantedge Clinical Assessment Request');
+    const body = encodeURIComponent(
       [
-        'Hello Lavelle, I would like a clinical assessment.',
-        `Question: ${question || 'Not provided'}`,
-        `Active device model: ${activeModel}`,
+        'I would like Lavelle to review this Azul Vantedge guidance and advise whether I need a clinical assessment.',
+        '',
+        `User question: ${question || 'Not provided'}`,
         `Selected body area: ${selectedBodyArea || 'Not tagged'}`,
+        `Active device model: ${activeModel}`,
+        `User mode: ${userMode}`,
         `Latest vibe: Pain ${vibeJournalData.painBefore}/${vibeJournalData.painAfter}, Focus ${vibeJournalData.focusBefore}/${vibeJournalData.focusAfter}, Stress ${vibeJournalData.stressBefore}/${vibeJournalData.stressAfter}`,
-      ].join(' ')
+      ].join('\n')
     );
 
-    const primary = `sms:8105225460&body=${smsBody}`;
-    const fallback = `sms:8105225460?body=${smsBody}`;
-    const supported = await Linking.canOpenURL(primary);
-    await Linking.openURL(supported ? primary : fallback);
+    const emailUrl = `mailto:justowntoday@gmail.com?subject=${subject}&body=${body}`;
+
+    try {
+      const supported = await Linking.canOpenURL(emailUrl);
+      if (supported) {
+        await Linking.openURL(emailUrl);
+      }
+    } catch {
+      await Linking.openURL(emailUrl);
+    }
   };
 
   return (
