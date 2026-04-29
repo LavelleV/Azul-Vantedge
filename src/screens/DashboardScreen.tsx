@@ -92,7 +92,18 @@ export function DashboardScreen({
           onOpen={onOpenSession}
           onClear={onClearHistory}
         />
-        <ReferenceGrid />
+        <ReferenceGrid
+          onSelect={(value) => {
+            if (!question.trim()) {
+              setQuestion(value);
+              return;
+            }
+
+            if (!question.includes(value)) {
+              setQuestion(`${question} | ${value}`);
+            }
+          }}
+        />
         <VibeJournal vibeJournalData={vibeJournalData} onOpen={onOpenVibeLog} />
       </ScrollView>
     </SafeAreaView>
