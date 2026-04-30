@@ -1,12 +1,22 @@
-import React, { useMemo, useState } from 'react';
+import React, { memo, useMemo, useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Svg, { Circle, Ellipse, G, Path, Rect } from 'react-native-svg';
 import { fullBodyRegions, type BodyMapPrimaryRegion, type BodyMapView, type CloseUpHotspot } from '../data/bodyMapRegions';
 
 import frontFullBodyImage from '../../assets/body-map/full/front-full-body.png';
 import backFullBodyImage from '../../assets/body-map/full/back-full-body.png';
+import shoulderFrontImage from '../../assets/body-map/regions/shoulder-front.png';
+import armFrontImage from '../../assets/body-map/regions/arm-front.png';
+import chestFrontImage from '../../assets/body-map/regions/chest-front.png';
+import abdomenFrontImage from '../../assets/body-map/regions/abdomen-front.png';
 import hipFrontImage from '../../assets/body-map/regions/hip-front.png';
 import hipGluteBackImage from '../../assets/body-map/regions/hip-glute-back.png';
+import thighFrontImage from '../../assets/body-map/regions/thigh-front.png';
+import kneeFrontImage from '../../assets/body-map/regions/knee-front.png';
+import lowerLegFrontImage from '../../assets/body-map/regions/lower-leg-front.png';
+import footAnkleFrontImage from '../../assets/body-map/regions/foot-ankle-front.png';
+import neckFrontImage from '../../assets/body-map/regions/neck-front.png';
+import lowBackBackImage from '../../assets/body-map/regions/low-back-back.png';
 
 // Future anatomical image assets for the production body-map system:
 // assets/body-map/full/front-full-body.png
@@ -31,7 +41,37 @@ const COLORS = {
 };
 
 const HAS_FULL_BODY_IMAGE_ASSETS = true;
-const HAS_HIP_CLOSEUP_IMAGE_ASSETS = true;
+const SHOW_HOTSPOT_DEBUG = false;
+
+// Verified region-to-image audit map.
+// Back views must never reuse unrelated front-only anatomy. If a correct back asset is
+// unavailable, getDetailImage() returns null and the SVG fallback is used instead.
+const DETAIL_IMAGE_MAP: Record<string, { front?: any; back?: any }> = {
+  shoulder: { front: shoulderFrontImage },
+  arm: { front: armFrontImage },
+  chest: { front: chestFrontImage },
+  abdomen: { front: abdomenFrontImage },
+  'hip-glute': { front: hipFrontImage, back: hipGluteBackImage },
+  thigh: { front: thighFrontImage },
+  knee: { front: kneeFrontImage },
+  'lower-leg': { front: lowerLegFrontImage },
+  'foot-ankle': { front: footAnkleFrontImage },
+  neck: { front: neckFrontImage },
+  'low-back': { back: lowBackBackImage },
+};
+
+function getDetailImage(regionId: string, viewMode: 'front' | 'back') {
+  const regionImage = DETAIL_IMAGE_MAP[regionId];
+  if (!regionImage) {
+    return null;
+  }
+
+  if (viewMode === 'front') {
+    return regionImage.front ?? null;
+  }
+
+  return regionImage.back ?? null;
+}
 
 type OverlayRegionProps = {
   x: number;
@@ -42,9 +82,10 @@ type OverlayRegionProps = {
   active: boolean;
   onPress: () => void;
   subtle?: boolean;
+  pointerOnly?: boolean;
 };
 
-function OverlayRegion({ x, y, width, height, active, onPress, subtle = false }: OverlayRegionProps) {
+const OverlayRegion = memo(function OverlayRegion({ x, y, width, height, active, onPress, subtle = false, pointerOnly = false }: OverlayRegionProps) {
   return (
     <Rect
       x={x}
@@ -52,15 +93,15 @@ function OverlayRegion({ x, y, width, height, active, onPress, subtle = false }:
       width={width}
       height={height}
       rx={Math.min(height / 2, 12)}
-      fill={active ? 'rgba(212, 175, 55, 0.28)' : 'rgba(0, 35, 102, 0.01)'}
-      stroke={active ? COLORS.gold : subtle ? 'rgba(0, 35, 102, 0.02)' : COLORS.lineStrong}
-      strokeWidth={active ? 1.8 : subtle ? 0.6 : 1}
+      fill={pointerOnly ? 'transparent' : active ? 'rgba(212, 175, 55, 0.10)' : 'rgba(0, 35, 102, 0.002)'}
+      stroke={pointerOnly ? 'transparent' : active ? 'rgba(212, 175, 55, 0.30)' : subtle ? 'rgba(0, 35, 102, 0.008)' : COLORS.lineStrong}
+      strokeWidth={pointerOnly ? 0 : active ? 0.8 : subtle ? 0.15 : 1}
       onPress={onPress}
     />
   );
-}
+});
 
-function FrontBodyBase() {
+const FrontBodyBase = memo(function FrontBodyBase() {
   return (
     <G>
       <Circle cx="110" cy="46" r="29" fill={COLORS.bodyHighlight} />
@@ -85,9 +126,9 @@ function FrontBodyBase() {
       <Path d="M124 480 C140 482, 152 478, 160 470" stroke={COLORS.bodyShadow} strokeWidth="12" strokeLinecap="round" fill="none" />
     </G>
   );
-}
+});
 
-function BackBodyBase() {
+const BackBodyBase = memo(function BackBodyBase() {
   return (
     <G>
       <Circle cx="110" cy="46" r="29" fill={COLORS.bodyHighlight} />
@@ -108,15 +149,32 @@ function BackBodyBase() {
       <Path d="M110 110 L110 246" stroke={COLORS.lineStrong} strokeWidth="1.2" opacity="0.55" />
     </G>
   );
-}
+});
 
 function getVisiblePrimaryRegions(viewMode: 'front' | 'back') {
-  return fullBodyRegions.filter((region) => {
+  const visible = fullBodyRegions.filter((region) => {
     if (region.supportedView === 'both') {
       return true;
     }
     return region.supportedView === viewMode;
   });
+
+  const priority = [
+    'head',
+    'neck',
+    'shoulder',
+    'chest',
+    'abdomen',
+    'low-back',
+    'hip-glute',
+    'thigh',
+    'knee',
+    'lower-leg',
+    'foot-ankle',
+    'arm',
+  ];
+
+  return visible.sort((left, right) => priority.indexOf(left.id) - priority.indexOf(right.id));
 }
 
 function toCanvasRect(region: { x: number; y: number; width: number; height: number }) {
@@ -128,6 +186,23 @@ function toCanvasRect(region: { x: number; y: number; width: number; height: num
   };
 }
 
+function toTapCanvasRect(region: BodyMapPrimaryRegion) {
+  return toCanvasRect({
+    x: region.tapX ?? region.x,
+    y: region.tapY ?? region.y,
+    width: region.tapWidth ?? region.width,
+    height: region.tapHeight ?? region.height,
+  });
+}
+
+function getTapRects(region: BodyMapPrimaryRegion) {
+  if (region.tapRects?.length) {
+    return region.tapRects.map(toCanvasRect);
+  }
+
+  return [toTapCanvasRect(region)];
+}
+
 function FullBodyMap({
   viewMode,
   selectedBodyArea,
@@ -137,7 +212,16 @@ function FullBodyMap({
   selectedBodyArea?: string;
   onSelectRegion: (region: BodyMapPrimaryRegion) => void;
 }) {
-  const visibleRegions = getVisiblePrimaryRegions(viewMode);
+  const visibleRegions = useMemo(() => getVisiblePrimaryRegions(viewMode), [viewMode]);
+  const visibleRegionRects = useMemo(
+    () =>
+      visibleRegions.map((region) => ({
+        region,
+        rect: toCanvasRect(region),
+        tapRects: getTapRects(region),
+      })),
+    [visibleRegions]
+  );
   const [imageFailed, setImageFailed] = useState(false);
   const showImage = HAS_FULL_BODY_IMAGE_ASSETS && !imageFailed;
 
@@ -159,17 +243,27 @@ function FullBodyMap({
 
       <Svg width="100%" height="100%" viewBox="0 0 220 540" style={styles.overlaySvg}>
         <G>
-          {visibleRegions.map((region) => {
-            const rect = toCanvasRect(region);
+          {visibleRegionRects.map(({ region, rect, tapRects }) => {
             return (
-              <OverlayRegion
-                key={`${viewMode}-${region.id}`}
-                {...rect}
-                label={region.label}
-                active={selectedBodyArea === region.label}
-                subtle
-                onPress={() => onSelectRegion(region)}
-              />
+              <G key={`${viewMode}-${region.id}`}>
+                {tapRects.map((tapRect, index) => (
+                  <OverlayRegion
+                    key={`${region.id}-tap-${index}`}
+                    {...tapRect}
+                    label={`${region.label}-tap-${index}`}
+                    active={false}
+                    pointerOnly
+                    onPress={() => onSelectRegion(region)}
+                  />
+                ))}
+                <OverlayRegion
+                  {...rect}
+                  label={region.label}
+                  active={selectedBodyArea === region.label}
+                  subtle={!SHOW_HOTSPOT_DEBUG}
+                  onPress={() => onSelectRegion(region)}
+                />
+              </G>
             );
           })}
         </G>
@@ -189,14 +283,20 @@ function CloseUpMap({
   selectedBodyArea?: string;
   onSelectHotspot: (hotspot: CloseUpHotspot) => void;
 }) {
+  const hotspotRects = useMemo(
+    () => region.closeUpHotspots.map((hotspot) => ({ hotspot, rect: toCanvasRect(hotspot) })),
+    [region]
+  );
   const [imageFailed, setImageFailed] = useState(false);
-  const showHipImage = region.id === 'hip-glute' && HAS_HIP_CLOSEUP_IMAGE_ASSETS && !imageFailed;
+  const regionImage = getDetailImage(region.id, viewMode);
+  const showDetailImage = !!regionImage && !imageFailed;
+  const showCloseUpOverlays = SHOW_HOTSPOT_DEBUG;
 
   return (
     <View style={styles.assetCanvas}>
-      {showHipImage ? (
+      {showDetailImage ? (
         <Image
-          source={viewMode === 'front' ? hipFrontImage : hipGluteBackImage}
+          source={viewMode === 'front' ? regionImage.front : regionImage.back}
           style={styles.assetImage}
           resizeMode="contain"
           onError={() => setImageFailed(true)}
@@ -211,22 +311,23 @@ function CloseUpMap({
         </Svg>
       )}
 
-      <Svg width="100%" height="100%" viewBox="0 0 220 220" style={styles.overlaySvg}>
-        <G>
-          {region.closeUpHotspots.map((hotspot) => {
-            const rect = toCanvasRect(hotspot);
-            return (
-              <OverlayRegion
-                key={hotspot.id}
-                {...rect}
-                label={hotspot.displayName}
-                active={selectedBodyArea === hotspot.displayName}
-                onPress={() => onSelectHotspot(hotspot)}
-              />
-            );
-          })}
-        </G>
-      </Svg>
+      {showCloseUpOverlays ? (
+        <Svg width="100%" height="100%" viewBox="0 0 220 220" style={styles.overlaySvg}>
+          <G>
+            {hotspotRects.map(({ hotspot, rect }) => {
+              return (
+                <OverlayRegion
+                  key={hotspot.id}
+                  {...rect}
+                  label={hotspot.displayName}
+                  active={selectedBodyArea === hotspot.displayName}
+                  onPress={() => onSelectHotspot(hotspot)}
+                />
+              );
+            })}
+          </G>
+        </Svg>
+      ) : null}
     </View>
   );
 }
@@ -296,14 +397,14 @@ export function BodyMap({
     }
 
     if (!selectedBodyArea) {
-      return 'Tap a broad body region first, then choose a more precise close-up area if needed.';
+      return 'Tap near the area that feels affected. Azul will use it as location context.';
     }
 
     return `Azul will include ${selectedBodyArea} as location context the next time you analyze your question.`;
   }, [activeRegion, selectedBodyArea]);
 
   const selectedLabel = activeRegion ? `${activeRegion.label} detail` : selectedBodyArea ?? 'None selected yet';
-  const closeUpHotspots = getCloseUpHotspotsForPanel(activeRegion);
+  const closeUpHotspots = useMemo(() => getCloseUpHotspotsForPanel(activeRegion), [activeRegion]);
 
   return (
     <View style={styles.card}>
@@ -485,6 +586,7 @@ const styles = StyleSheet.create({
   },
   assetCanvas: {
     flex: 1,
+    cursor: 'pointer',
   },
   overlaySvg: {
     position: 'absolute',

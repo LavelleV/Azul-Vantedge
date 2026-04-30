@@ -20,6 +20,16 @@ export type BodyMapPrimaryRegion = {
   y: number;
   width: number;
   height: number;
+  tapX?: number;
+  tapY?: number;
+  tapWidth?: number;
+  tapHeight?: number;
+  tapRects?: Array<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }>;
   closeUpTitle: string;
   closeUpHotspots: CloseUpHotspot[];
 };
@@ -39,10 +49,10 @@ export const fullBodyRegions: BodyMapPrimaryRegion[] = [
     label: 'Head',
     supportedView: 'both',
     assetKey: 'head-face-front',
-    x: 40,
-    y: 3,
-    width: 20,
-    height: 9,
+    x: 41,
+    y: 2.5,
+    width: 18,
+    height: 8,
     closeUpTitle: 'Head Detail',
     closeUpHotspots: [
       { id: 'head-brain', label: 'Head / Brain', displayName: 'Head / Brain', x: 26, y: 10, width: 48, height: 18 },
@@ -55,10 +65,14 @@ export const fullBodyRegions: BodyMapPrimaryRegion[] = [
     label: 'Neck',
     supportedView: 'both',
     assetKey: 'neck-front',
-    x: 44,
-    y: 12,
-    width: 12,
-    height: 5,
+    x: 45,
+    y: 11,
+    width: 10,
+    height: 4.5,
+    tapX: 42,
+    tapY: 10,
+    tapWidth: 16,
+    tapHeight: 7,
     closeUpTitle: 'Neck Detail',
     closeUpHotspots: [
       { id: 'front-neck', label: 'Front Neck', displayName: 'Front Neck', x: 26, y: 18, width: 48, height: 14 },
@@ -73,17 +87,22 @@ export const fullBodyRegions: BodyMapPrimaryRegion[] = [
     label: 'Shoulder',
     supportedView: 'both',
     assetKey: 'shoulder-front',
-    x: 21,
+    x: 24,
     y: 15,
-    width: 58,
-    height: 6,
+    width: 52,
+    height: 5,
+    tapRects: [
+      { x: 16, y: 12, width: 28, height: 12 },
+      { x: 56, y: 12, width: 28, height: 12 },
+    ],
     closeUpTitle: 'Shoulder Detail',
     closeUpHotspots: [
-      { id: 'front-shoulder', label: 'Front Shoulder', displayName: 'Front Shoulder', x: 18, y: 20, width: 64, height: 14 },
-      { id: 'top-shoulder', label: 'Top Shoulder', displayName: 'Top Shoulder', x: 26, y: 38, width: 48, height: 12 },
-      { id: 'rotator-cuff', label: 'Rotator Cuff', displayName: 'Rotator Cuff', x: 22, y: 56, width: 56, height: 14 },
-      { id: 'shoulder-blade', label: 'Shoulder Blade', displayName: 'Shoulder Blade', x: 18, y: 74, width: 64, height: 14 },
-      { id: 'rear-shoulder', label: 'Rear Shoulder', displayName: 'Rear Shoulder', x: 22, y: 90, width: 56, height: 10 },
+      { id: 'front-shoulder', label: 'Front Shoulder / Coracoid Area', displayName: 'Front Shoulder / Coracoid Area', x: 18, y: 20, width: 56, height: 12 },
+      { id: 'top-shoulder', label: 'Top Shoulder / AC Joint', displayName: 'Top Shoulder / AC Joint', x: 32, y: 36, width: 38, height: 10 },
+      { id: 'rotator-cuff', label: 'Rotator Cuff', displayName: 'Rotator Cuff', x: 24, y: 52, width: 48, height: 12 },
+      { id: 'rear-shoulder', label: 'Rear Shoulder', displayName: 'Rear Shoulder', x: 22, y: 68, width: 48, height: 12 },
+      { id: 'shoulder-blade', label: 'Shoulder Blade / Scapula', displayName: 'Shoulder Blade / Scapula', x: 18, y: 84, width: 56, height: 10 },
+      { id: 'upper-trap', label: 'Upper Trap', displayName: 'Upper Trap', x: 56, y: 18, width: 24, height: 14 },
     ],
   },
   {
@@ -92,9 +111,13 @@ export const fullBodyRegions: BodyMapPrimaryRegion[] = [
     supportedView: 'both',
     assetKey: 'arm-front',
     x: 8,
-    y: 20,
-    width: 84,
-    height: 16,
+    y: 22,
+    width: 22,
+    height: 20,
+    tapRects: [
+      { x: 3, y: 18, width: 20, height: 28 },
+      { x: 77, y: 18, width: 20, height: 28 },
+    ],
     closeUpTitle: 'Arm Detail',
     closeUpHotspots: [
       { id: 'upper-arm', label: 'Upper Arm', displayName: 'Upper Arm', x: 20, y: 18, width: 60, height: 18 },
@@ -108,10 +131,10 @@ export const fullBodyRegions: BodyMapPrimaryRegion[] = [
     label: 'Chest',
     supportedView: 'front',
     assetKey: 'chest-front',
-    x: 31,
-    y: 20,
-    width: 38,
-    height: 9,
+    x: 34,
+    y: 19,
+    width: 32,
+    height: 8,
     closeUpTitle: 'Chest Detail',
     closeUpHotspots: [
       { id: 'upper-chest', label: 'Upper Chest', displayName: 'Upper Chest', x: 20, y: 18, width: 60, height: 18 },
@@ -125,10 +148,14 @@ export const fullBodyRegions: BodyMapPrimaryRegion[] = [
     label: 'Abdomen / Gut',
     supportedView: 'front',
     assetKey: 'abdomen-front',
-    x: 34,
-    y: 30,
-    width: 32,
+    x: 36,
+    y: 28,
+    width: 28,
     height: 10,
+    tapX: 33,
+    tapY: 26,
+    tapWidth: 34,
+    tapHeight: 14,
     closeUpTitle: 'Abdomen / Gut Detail',
     closeUpHotspots: [
       { id: 'upper-abdomen', label: 'Upper Abdomen', displayName: 'Upper Abdomen', x: 20, y: 16, width: 60, height: 16 },
@@ -143,10 +170,14 @@ export const fullBodyRegions: BodyMapPrimaryRegion[] = [
     label: 'Low Back',
     supportedView: 'back',
     assetKey: 'low-back-back',
-    x: 33,
-    y: 31,
-    width: 34,
-    height: 10,
+    x: 35,
+    y: 30,
+    width: 30,
+    height: 9,
+    tapX: 32,
+    tapY: 28,
+    tapWidth: 36,
+    tapHeight: 13,
     closeUpTitle: 'Low Back Detail',
     closeUpHotspots: [
       { id: 'lumbar-center', label: 'Lumbar Center', displayName: 'Lumbar Center', x: 32, y: 18, width: 36, height: 18 },
@@ -161,10 +192,14 @@ export const fullBodyRegions: BodyMapPrimaryRegion[] = [
     label: 'Hip / Glute',
     supportedView: 'both',
     assetKey: 'hip-glute-back',
-    x: 28,
-    y: 40,
-    width: 44,
+    x: 33,
+    y: 39,
+    width: 34,
     height: 8,
+    tapRects: [
+      { x: 28, y: 36, width: 20, height: 14 },
+      { x: 52, y: 36, width: 20, height: 14 },
+    ],
     closeUpTitle: 'Hip / Glute Detail',
     closeUpHotspots: [
       { id: 'glute', label: 'Glute', displayName: 'Glute', x: 24, y: 22, width: 42, height: 14 },
@@ -180,9 +215,9 @@ export const fullBodyRegions: BodyMapPrimaryRegion[] = [
     label: 'Thigh',
     supportedView: 'both',
     assetKey: 'thigh-front',
-    x: 32,
-    y: 48,
-    width: 34,
+    x: 36,
+    y: 47,
+    width: 28,
     height: 16,
     closeUpTitle: 'Thigh Detail',
     closeUpHotspots: [
@@ -198,15 +233,21 @@ export const fullBodyRegions: BodyMapPrimaryRegion[] = [
     supportedView: 'both',
     assetKey: 'knee-front',
     x: 35,
-    y: 65,
+    y: 62,
     width: 30,
-    height: 6,
+    height: 8,
+    tapRects: [
+      { x: 31, y: 59, width: 18, height: 14 },
+      { x: 51, y: 59, width: 18, height: 14 },
+    ],
     closeUpTitle: 'Knee Detail',
     closeUpHotspots: [
       { id: 'kneecap', label: 'Kneecap', displayName: 'Kneecap', x: 30, y: 20, width: 40, height: 16 },
       { id: 'inner-knee', label: 'Inner Knee', displayName: 'Inner Knee', x: 12, y: 44, width: 30, height: 18 },
       { id: 'outer-knee', label: 'Outer Knee', displayName: 'Outer Knee', x: 58, y: 44, width: 30, height: 18 },
       { id: 'back-knee', label: 'Back of Knee', displayName: 'Back of Knee', x: 24, y: 70, width: 52, height: 14 },
+      { id: 'patellar-tendon', label: 'Patellar Tendon', displayName: 'Patellar Tendon', x: 36, y: 56, width: 28, height: 10 },
+      { id: 'quad-tendon', label: 'Quad Tendon', displayName: 'Quad Tendon', x: 34, y: 8, width: 32, height: 10 },
     ],
   },
   {
@@ -214,9 +255,9 @@ export const fullBodyRegions: BodyMapPrimaryRegion[] = [
     label: 'Lower Leg',
     supportedView: 'both',
     assetKey: 'lower-leg-front',
-    x: 34,
-    y: 72,
-    width: 32,
+    x: 39,
+    y: 70,
+    width: 22,
     height: 14,
     closeUpTitle: 'Lower Leg Detail',
     closeUpHotspots: [
@@ -231,10 +272,14 @@ export const fullBodyRegions: BodyMapPrimaryRegion[] = [
     label: 'Foot / Ankle',
     supportedView: 'both',
     assetKey: 'foot-top',
-    x: 31,
-    y: 87,
-    width: 38,
+    x: 37,
+    y: 85,
+    width: 26,
     height: 7,
+    tapRects: [
+      { x: 28, y: 81, width: 20, height: 18 },
+      { x: 52, y: 81, width: 20, height: 18 },
+    ],
     closeUpTitle: 'Foot / Ankle Detail',
     closeUpHotspots: [
       { id: 'heel', label: 'Heel', displayName: 'Heel', x: 14, y: 18, width: 26, height: 16 },
