@@ -1,713 +1,627 @@
-import React, { memo, useMemo, useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import Svg, { Circle, Ellipse, G, Path, Rect } from 'react-native-svg';
-import { fullBodyRegions, type BodyMapPrimaryRegion, type BodyMapView, type CloseUpHotspot } from '../data/bodyMapRegions';
+import React, { useMemo, useState } from "react";
+import {
+  Image,
+  ImageSourcePropType,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
-import frontFullBodyImage from '../../assets/body-map/full/front-full-body.png';
-import backFullBodyImage from '../../assets/body-map/full/back-full-body.png';
-import shoulderFrontImage from '../../assets/body-map/regions/shoulder-front.png';
-import armFrontImage from '../../assets/body-map/regions/arm-front.png';
-import chestFrontImage from '../../assets/body-map/regions/chest-front.png';
-import abdomenFrontImage from '../../assets/body-map/regions/abdomen-front.png';
-import hipFrontImage from '../../assets/body-map/regions/hip-front.png';
-import hipGluteBackImage from '../../assets/body-map/regions/hip-glute-back.png';
-import thighFrontImage from '../../assets/body-map/regions/thigh-front.png';
-import kneeFrontImage from '../../assets/body-map/regions/knee-front.png';
-import lowerLegFrontImage from '../../assets/body-map/regions/lower-leg-front.png';
-import footAnkleFrontImage from '../../assets/body-map/regions/foot-ankle-front.png';
-import neckFrontImage from '../../assets/body-map/regions/neck-front.png';
-import lowBackBackImage from '../../assets/body-map/regions/low-back-back.png';
+import frontFullBodyImage from "../../assets/body-map/full/front-full-body.png";
+import backFullBodyImage from "../../assets/body-map/full/back-full-body.png";
 
-// Future anatomical image assets for the production body-map system:
-// assets/body-map/full/front-full-body.png
-// assets/body-map/full/back-full-body.png
-// assets/body-map/regions/*.png
-//
-// This component keeps the current vector fallback active until those assets exist.
-// The region and hotspot overlay values are stored as percentages in bodyMapRegions.ts
-// so image-based alignment can be tuned later without rewriting selection behavior.
+import abdomenFrontImage from "../../assets/body-map/regions/abdomen-front.png";
+import armFrontImage from "../../assets/body-map/regions/arm-front.png";
+import chestFrontImage from "../../assets/body-map/regions/chest-front.png";
+import footAnkleFrontImage from "../../assets/body-map/regions/foot-ankle-front.png";
+import hipFrontImage from "../../assets/body-map/regions/hip-front.png";
+import hipGluteBackImage from "../../assets/body-map/regions/hip-glute-back.png";
+import kneeFrontImage from "../../assets/body-map/regions/knee-front.png";
+import lowBackBackImage from "../../assets/body-map/regions/low-back-back.png";
+import lowerLegFrontImage from "../../assets/body-map/regions/lower-leg-front.png";
+import neckFrontImage from "../../assets/body-map/regions/neck-front.png";
+import shoulderFrontImage from "../../assets/body-map/regions/shoulder-front.png";
+import thighFrontImage from "../../assets/body-map/regions/thigh-front.png";
 
-const COLORS = {
-  navy: '#002366',
-  gold: '#D4AF37',
-  slate: '#60718D',
-  ink: '#474747',
-  mist: '#EEF3F8',
-  line: 'rgba(0, 35, 102, 0.15)',
-  lineStrong: 'rgba(0, 35, 102, 0.28)',
-  body: '#D0DAE6',
-  bodyShadow: '#BCC8D8',
-  bodyHighlight: '#E5ECF4',
-};
+import {
+  BODY_MAP_MANIFEST,
+  BodyMapView,
+  FULL_BODY_HOTSPOTS,
+  RegionImageFile,
+  StableBodyRegionId,
+} from "../data/bodyMapRegions";
 
-const HAS_FULL_BODY_IMAGE_ASSETS = true;
 const SHOW_HOTSPOT_DEBUG = false;
 
-// Verified region-to-image audit map.
-// Back views must never reuse unrelated front-only anatomy. If a correct back asset is
-// unavailable, getDetailImage() returns null and the SVG fallback is used instead.
-const DETAIL_IMAGE_MAP: Record<string, { front?: any; back?: any }> = {
-  shoulder: { front: shoulderFrontImage },
-  arm: { front: armFrontImage },
-  chest: { front: chestFrontImage },
-  abdomen: { front: abdomenFrontImage },
-  'hip-glute': { front: hipFrontImage, back: hipGluteBackImage },
-  thigh: { front: thighFrontImage },
-  knee: { front: kneeFrontImage },
-  'lower-leg': { front: lowerLegFrontImage },
-  'foot-ankle': { front: footAnkleFrontImage },
-  neck: { front: neckFrontImage },
-  'low-back': { back: lowBackBackImage },
+/**
+ * LOCKED BODY-MAP IMAGE SOURCE MAP
+ *
+ * Only include files that physically exist in assets/body-map/regions.
+ * Do not use dynamic require strings.
+ * Do not substitute unrelated images.
+ */
+const REGION_DETAIL_IMAGES: Partial<Record<RegionImageFile, ImageSourcePropType>> = {
+  "abdomen-front.png": abdomenFrontImage as ImageSourcePropType,
+  "arm-front.png": armFrontImage as ImageSourcePropType,
+  "chest-front.png": chestFrontImage as ImageSourcePropType,
+  "foot-ankle-front.png": footAnkleFrontImage as ImageSourcePropType,
+  "hip-front.png": hipFrontImage as ImageSourcePropType,
+  "hip-glute-back.png": hipGluteBackImage as ImageSourcePropType,
+  "knee-front.png": kneeFrontImage as ImageSourcePropType,
+  "low-back-back.png": lowBackBackImage as ImageSourcePropType,
+  "lower-leg-front.png": lowerLegFrontImage as ImageSourcePropType,
+  "neck-front.png": neckFrontImage as ImageSourcePropType,
+  "shoulder-front.png": shoulderFrontImage as ImageSourcePropType,
+  "thigh-front.png": thighFrontImage as ImageSourcePropType,
 };
 
-function getDetailImage(regionId: string, viewMode: 'front' | 'back') {
-  const regionImage = DETAIL_IMAGE_MAP[regionId];
-  if (!regionImage) {
-    return null;
-  }
-
-  if (viewMode === 'front') {
-    return regionImage.front ?? null;
-  }
-
-  return regionImage.back ?? null;
-}
-
-type OverlayRegionProps = {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  label: string;
-  active: boolean;
-  onPress: () => void;
-  subtle?: boolean;
-  pointerOnly?: boolean;
+const FULL_BODY_IMAGES: Record<BodyMapView, ImageSourcePropType> = {
+  front: frontFullBodyImage as ImageSourcePropType,
+  back: backFullBodyImage as ImageSourcePropType,
 };
 
-const OverlayRegion = memo(function OverlayRegion({ x, y, width, height, active, onPress, subtle = false, pointerOnly = false }: OverlayRegionProps) {
-  return (
-    <Rect
-      x={x}
-      y={y}
-      width={width}
-      height={height}
-      rx={Math.min(height / 2, 12)}
-      fill={pointerOnly ? 'transparent' : active ? 'rgba(212, 175, 55, 0.10)' : 'rgba(0, 35, 102, 0.002)'}
-      stroke={pointerOnly ? 'transparent' : active ? 'rgba(212, 175, 55, 0.30)' : subtle ? 'rgba(0, 35, 102, 0.008)' : COLORS.lineStrong}
-      strokeWidth={pointerOnly ? 0 : active ? 0.8 : subtle ? 0.15 : 1}
-      onPress={onPress}
-    />
-  );
-});
+type FlexibleBodyMapProps = {
+  selectedArea?: string | null;
+  selectedBodyArea?: string | null;
+  value?: string | null;
+  onSelect?: (area: string | null) => void;
+  onAreaSelect?: (area: string | null) => void;
+  onChange?: (area: string | null) => void;
+  onSelectedAreaChange?: (area: string | null) => void;
+  onClear?: () => void;
+  [key: string]: unknown;
+};
 
-const FrontBodyBase = memo(function FrontBodyBase() {
-  return (
-    <G>
-      <Circle cx="110" cy="46" r="29" fill={COLORS.bodyHighlight} />
-      <Circle cx="110" cy="46" r="27" fill={COLORS.body} />
-      <Rect x="100" y="72" width="20" height="22" rx="9" fill={COLORS.bodyShadow} />
-      <Path
-        d="M62 108 C72 88, 88 84, 110 84 C132 84, 148 88, 158 108 L166 142 C164 152, 156 160, 144 164 L138 250 C130 258, 122 262, 110 262 C98 262, 90 258, 82 250 L76 164 C64 160, 56 152, 54 142 Z"
-        fill={COLORS.body}
-      />
-      <Path
-        d="M76 116 C86 106, 96 104, 110 104 C124 104, 134 106, 144 116 L150 146 C146 150, 140 152, 132 152 L128 210 C122 216, 116 220, 110 220 C104 220, 98 216, 92 210 L88 152 C80 152, 74 150, 70 146 Z"
-        fill={COLORS.bodyHighlight}
-        opacity="0.45"
-      />
-      <Path d="M76 122 L48 234 L62 238 L92 136 Z" fill={COLORS.bodyShadow} />
-      <Path d="M144 122 L172 234 L158 238 L128 136 Z" fill={COLORS.bodyShadow} />
-      <Path d="M82 250 L68 376 L86 380 L100 260 Z" fill={COLORS.body} />
-      <Path d="M138 250 L120 260 L134 380 L152 376 Z" fill={COLORS.body} />
-      <Path d="M70 378 L62 468 L82 470 L90 382 Z" fill={COLORS.bodyShadow} />
-      <Path d="M150 376 L140 382 L148 470 L168 468 Z" fill={COLORS.bodyShadow} />
-      <Path d="M60 470 C68 478, 80 482, 96 480" stroke={COLORS.bodyShadow} strokeWidth="12" strokeLinecap="round" fill="none" />
-      <Path d="M124 480 C140 482, 152 478, 160 470" stroke={COLORS.bodyShadow} strokeWidth="12" strokeLinecap="round" fill="none" />
-    </G>
-  );
-});
+function normalizeRegionId(value: string | null | undefined): StableBodyRegionId | null {
+  if (!value) return null;
 
-const BackBodyBase = memo(function BackBodyBase() {
-  return (
-    <G>
-      <Circle cx="110" cy="46" r="29" fill={COLORS.bodyHighlight} />
-      <Circle cx="110" cy="46" r="27" fill={COLORS.body} />
-      <Rect x="100" y="72" width="20" height="22" rx="9" fill={COLORS.bodyShadow} />
-      <Path
-        d="M64 110 C74 90, 90 84, 110 84 C130 84, 146 90, 156 110 L164 150 C160 158, 152 164, 142 168 L136 250 C128 260, 120 264, 110 264 C100 264, 92 260, 84 250 L78 168 C68 164, 60 158, 56 150 Z"
-        fill={COLORS.body}
-      />
-      <Path d="M78 126 L52 234 L66 238 L94 138 Z" fill={COLORS.bodyShadow} />
-      <Path d="M142 126 L168 234 L154 238 L126 138 Z" fill={COLORS.bodyShadow} />
-      <Path d="M84 252 L70 376 L88 380 L102 262 Z" fill={COLORS.body} />
-      <Path d="M136 252 L118 262 L132 380 L150 376 Z" fill={COLORS.body} />
-      <Path d="M72 378 L64 468 L84 470 L92 382 Z" fill={COLORS.bodyShadow} />
-      <Path d="M148 376 L138 382 L146 470 L166 468 Z" fill={COLORS.bodyShadow} />
-      <Path d="M62 470 C70 478, 82 482, 98 480" stroke={COLORS.bodyShadow} strokeWidth="12" strokeLinecap="round" fill="none" />
-      <Path d="M122 480 C138 482, 150 478, 158 470" stroke={COLORS.bodyShadow} strokeWidth="12" strokeLinecap="round" fill="none" />
-      <Path d="M110 110 L110 246" stroke={COLORS.lineStrong} strokeWidth="1.2" opacity="0.55" />
-    </G>
-  );
-});
+  const normalized = String(value).trim().toLowerCase().replace(/\s+/g, "_").replace(/-/g, "_");
 
-function getVisiblePrimaryRegions(viewMode: 'front' | 'back') {
-  const visible = fullBodyRegions.filter((region) => {
-    if (region.supportedView === 'both') {
-      return true;
-    }
-    return region.supportedView === viewMode;
-  });
+  const aliases: Record<string, StableBodyRegionId> = {
+    head: "head",
+    face: "head",
+    jaw: "head",
+    head_face_jaw: "head",
 
-  const priority = [
-    'head',
-    'neck',
-    'shoulder',
-    'chest',
-    'abdomen',
-    'low-back',
-    'hip-glute',
-    'thigh',
-    'knee',
-    'lower-leg',
-    'foot-ankle',
-    'arm',
-  ];
+    neck: "neck",
 
-  return visible.sort((left, right) => priority.indexOf(left.id) - priority.indexOf(right.id));
-}
+    shoulder: "shoulder",
+    shoulders: "shoulder",
+    scapula: "shoulder",
+    shoulder_blade: "shoulder",
 
-function toCanvasRect(region: { x: number; y: number; width: number; height: number }) {
-  return {
-    x: (region.x / 100) * 220,
-    y: (region.y / 100) * 540,
-    width: (region.width / 100) * 220,
-    height: (region.height / 100) * 540,
+    arm: "arm",
+    arms: "arm",
+    hand: "arm",
+    wrist: "arm",
+    arm_hand: "arm",
+
+    chest: "chest",
+    ribs: "chest",
+    chest_ribs: "chest",
+
+    abdomen: "abdomen",
+    gut: "abdomen",
+    abdomen_gut: "abdomen",
+
+    low_back: "low_back",
+    lowback: "low_back",
+    lumbar: "low_back",
+    si: "low_back",
+    low_back_si: "low_back",
+
+    hip: "hip_glute",
+    hips: "hip_glute",
+    glute: "hip_glute",
+    pelvis: "hip_glute",
+    hip_glute: "hip_glute",
+    hip_glute_pelvis: "hip_glute",
+
+    thigh: "thigh",
+
+    knee: "knee",
+
+    lower_leg: "lower_leg",
+    calf: "lower_leg",
+    shin: "lower_leg",
+
+    foot: "foot_ankle",
+    ankle: "foot_ankle",
+    foot_ankle: "foot_ankle",
   };
+
+  return aliases[normalized] ?? null;
 }
 
-function toTapCanvasRect(region: BodyMapPrimaryRegion) {
-  return toCanvasRect({
-    x: region.tapX ?? region.x,
-    y: region.tapY ?? region.y,
-    width: region.tapWidth ?? region.width,
-    height: region.tapHeight ?? region.height,
-  });
+/**
+ * LOCKED DETAIL IMAGE RESOLVER
+ *
+ * Accepts stable region IDs only.
+ * Returns the approved image for the region/view.
+ * Returns null if the approved image is missing.
+ * Never guesses, never swaps unrelated images.
+ */
+export function resolveDetailImage(
+  regionId: StableBodyRegionId | string | null,
+  view: BodyMapView
+): ImageSourcePropType | null {
+  const stableId = normalizeRegionId(regionId);
+  if (!stableId) return null;
+
+  const manifestEntry = BODY_MAP_MANIFEST[stableId];
+  const requestedFile =
+    view === "back" ? manifestEntry.backImageFile : manifestEntry.frontImageFile;
+
+  if (!requestedFile) return null;
+
+  return REGION_DETAIL_IMAGES[requestedFile] ?? null;
 }
 
-function getTapRects(region: BodyMapPrimaryRegion) {
-  if (region.tapRects?.length) {
-    return region.tapRects.map(toCanvasRect);
+export function BodyMap(props: FlexibleBodyMapProps) {
+  const selectedBodyArea =
+    props.selectedBodyArea ?? props.selectedArea ?? props.value ?? null;
+
+  const [view, setView] = useState<BodyMapView>("front");
+  const [activeDetailRegionId, setActiveDetailRegionId] =
+    useState<StableBodyRegionId | null>(null);
+  const [failedImageKeys, setFailedImageKeys] = useState<Record<string, boolean>>({});
+
+  const activeDetailRegion = activeDetailRegionId
+    ? BODY_MAP_MANIFEST[activeDetailRegionId]
+    : null;
+
+  const activeDetailImage = activeDetailRegionId
+    ? resolveDetailImage(activeDetailRegionId, view)
+    : null;
+
+  const activeDetailImageKey = activeDetailRegionId
+    ? `${activeDetailRegionId}-${view}`
+    : "none";
+
+  const detailImageFailed = failedImageKeys[activeDetailImageKey] === true;
+
+  const visibleSelectedLabel =
+    selectedBodyArea ||
+    (activeDetailRegion ? `${activeDetailRegion.label} detail` : "None selected yet");
+
+  const filteredHotspots = useMemo(() => {
+    return FULL_BODY_HOTSPOTS.filter((hotspot) => hotspot.view === view).sort(
+      (a, b) => a.priority - b.priority
+    );
+  }, [view]);
+
+  function emitSelection(area: string | null) {
+    props.onSelect?.(area);
+    props.onAreaSelect?.(area);
+    props.onChange?.(area);
+    props.onSelectedAreaChange?.(area);
   }
 
-  return [toTapCanvasRect(region)];
-}
+  function handleFullBodyRegionPress(regionId: StableBodyRegionId) {
+    const region = BODY_MAP_MANIFEST[regionId];
 
-function FullBodyMap({
-  viewMode,
-  selectedBodyArea,
-  onSelectRegion,
-}: {
-  viewMode: 'front' | 'back';
-  selectedBodyArea?: string;
-  onSelectRegion: (region: BodyMapPrimaryRegion) => void;
-}) {
-  const visibleRegions = useMemo(() => getVisiblePrimaryRegions(viewMode), [viewMode]);
-  const visibleRegionRects = useMemo(
-    () =>
-      visibleRegions.map((region) => ({
-        region,
-        rect: toCanvasRect(region),
-        tapRects: getTapRects(region),
-      })),
-    [visibleRegions]
-  );
-  const [imageFailed, setImageFailed] = useState(false);
-  const showImage = HAS_FULL_BODY_IMAGE_ASSETS && !imageFailed;
+    emitSelection(region.label);
+    setActiveDetailRegionId(region.id);
+  }
 
-  return (
-    <View style={styles.assetCanvas}>
-      {showImage ? (
-        <Image
-          source={viewMode === 'front' ? frontFullBodyImage : backFullBodyImage}
-          style={styles.assetImage}
-          resizeMode="contain"
-          onError={() => setImageFailed(true)}
-        />
-      ) : (
-        <Svg width="100%" height="100%" viewBox="0 0 220 540">
-          <Rect x="10" y="10" width="200" height="520" rx="34" fill="#F7FAFD" />
-          {viewMode === 'front' ? <FrontBodyBase /> : <BackBodyBase />}
-        </Svg>
-      )}
+  function handleChipPress(label: string) {
+    emitSelection(label);
+  }
 
-      <Svg width="100%" height="100%" viewBox="0 0 220 540" style={styles.overlaySvg}>
-        <G>
-          {visibleRegionRects.map(({ region, rect, tapRects }) => {
-            return (
-              <G key={`${viewMode}-${region.id}`}>
-                {tapRects.map((tapRect, index) => (
-                  <OverlayRegion
-                    key={`${region.id}-tap-${index}`}
-                    {...tapRect}
-                    label={`${region.label}-tap-${index}`}
-                    active={false}
-                    pointerOnly
-                    onPress={() => onSelectRegion(region)}
-                  />
-                ))}
-                <OverlayRegion
-                  {...rect}
-                  label={region.label}
-                  active={selectedBodyArea === region.label}
-                  subtle={!SHOW_HOTSPOT_DEBUG}
-                  onPress={() => onSelectRegion(region)}
-                />
-              </G>
-            );
-          })}
-        </G>
-      </Svg>
-    </View>
-  );
-}
+  function handleBackToFullBody() {
+    setActiveDetailRegionId(null);
+  }
 
-function CloseUpMap({
-  region,
-  viewMode,
-  selectedBodyArea,
-  onSelectHotspot,
-}: {
-  region: BodyMapPrimaryRegion;
-  viewMode: 'front' | 'back';
-  selectedBodyArea?: string;
-  onSelectHotspot: (hotspot: CloseUpHotspot) => void;
-}) {
-  const hotspotRects = useMemo(
-    () => region.closeUpHotspots.map((hotspot) => ({ hotspot, rect: toCanvasRect(hotspot) })),
-    [region]
-  );
-  const [imageFailed, setImageFailed] = useState(false);
-  const regionImage = getDetailImage(region.id, viewMode);
-  const showDetailImage = !!regionImage && !imageFailed;
-  const showCloseUpOverlays = SHOW_HOTSPOT_DEBUG;
+  function handleClearSelection() {
+    setActiveDetailRegionId(null);
+    emitSelection(null);
+    props.onClear?.();
+  }
 
-  return (
-    <View style={styles.assetCanvas}>
-      {showDetailImage ? (
-        <Image
-          source={viewMode === 'front' ? regionImage.front : regionImage.back}
-          style={styles.assetImage}
-          resizeMode="contain"
-          onError={() => setImageFailed(true)}
-        />
-      ) : (
-        <Svg width="100%" height="100%" viewBox="0 0 220 220">
-          <Rect x="10" y="10" width="200" height="200" rx="28" fill="#F7FAFD" />
-          <Ellipse cx="110" cy="110" rx="76" ry="88" fill={COLORS.bodyHighlight} />
-          <Ellipse cx="110" cy="112" rx="68" ry="80" fill={COLORS.body} />
-          <Path d="M68 62 C84 42, 136 42, 152 62" stroke={COLORS.lineStrong} strokeWidth="2" fill="none" />
-          <Path d="M72 158 C92 176, 128 176, 148 158" stroke={COLORS.lineStrong} strokeWidth="2" fill="none" />
-        </Svg>
-      )}
-
-      {showCloseUpOverlays ? (
-        <Svg width="100%" height="100%" viewBox="0 0 220 220" style={styles.overlaySvg}>
-          <G>
-            {hotspotRects.map(({ hotspot, rect }) => {
-              return (
-                <OverlayRegion
-                  key={hotspot.id}
-                  {...rect}
-                  label={hotspot.displayName}
-                  active={selectedBodyArea === hotspot.displayName}
-                  onPress={() => onSelectHotspot(hotspot)}
-                />
-              );
-            })}
-          </G>
-        </Svg>
-      ) : null}
-    </View>
-  );
-}
-
-function BodyMapVisual({
-  viewMode,
-  selectedBodyArea,
-  activeRegion,
-  onSelectRegion,
-  onSelectHotspot,
-}: {
-  viewMode: 'front' | 'back';
-  selectedBodyArea?: string;
-  activeRegion: BodyMapPrimaryRegion | null;
-  onSelectRegion: (region: BodyMapPrimaryRegion) => void;
-  onSelectHotspot: (hotspot: CloseUpHotspot) => void;
-}) {
-  // Real anatomical assets are active for the full-body map and hip close-up.
-  // If any image fails to load at runtime, the SVG fallback remains in place so
-  // the app never loses selection behavior or blanks the page.
-
-  if (activeRegion) {
+  function renderFullBodyMap() {
     return (
-        <CloseUpMap
-          region={activeRegion}
-          viewMode={viewMode}
-          selectedBodyArea={selectedBodyArea}
-          onSelectHotspot={onSelectHotspot}
-        />
+      <View style={styles.imageStage}>
+        <View style={styles.fullBodyImageWrap}>
+          <Image
+            source={FULL_BODY_IMAGES[view]}
+            resizeMode="contain"
+            style={styles.fullBodyImage}
+          />
+
+          {filteredHotspots.map((hotspot) => (
+            <Pressable
+              key={hotspot.id}
+              accessibilityRole="button"
+              accessibilityLabel={`Select ${BODY_MAP_MANIFEST[hotspot.regionId].label}`}
+              onPress={() => handleFullBodyRegionPress(hotspot.regionId)}
+              style={[
+                styles.fullBodyHotspot,
+                {
+                  left: `${hotspot.tapRect.left}%`,
+                  top: `${hotspot.tapRect.top}%`,
+                  width: `${hotspot.tapRect.width}%`,
+                  height: `${hotspot.tapRect.height}%`,
+                  zIndex: hotspot.priority,
+                },
+                SHOW_HOTSPOT_DEBUG ? styles.debugHotspot : null,
+                Platform.OS === "web" ? ({ cursor: "pointer" } as never) : null,
+              ]}
+            />
+          ))}
+        </View>
+      </View>
     );
   }
 
-  return (
-    <FullBodyMap
-      viewMode={viewMode}
-      selectedBodyArea={selectedBodyArea}
-      onSelectRegion={onSelectRegion}
-    />
-  );
-}
+  function renderDetailMap() {
+    const regionLabel = activeDetailRegion?.label ?? "this area";
+    const shouldShowImage = activeDetailImage && !detailImageFailed;
 
-function getCloseUpHotspotsForPanel(activeRegion: BodyMapPrimaryRegion | null) {
-  if (!activeRegion) {
-    return [] as CloseUpHotspot[];
+    return (
+      <View style={styles.imageStage}>
+        <Pressable onPress={handleBackToFullBody} style={styles.backButton}>
+          <Text style={styles.backButtonText}>Back to Full Body</Text>
+        </Pressable>
+
+        <View style={styles.detailImageWrap}>
+          {shouldShowImage ? (
+            <Image
+              source={activeDetailImage}
+              resizeMode="contain"
+              style={styles.detailImage}
+              onError={() => {
+                setFailedImageKeys((current) => ({
+                  ...current,
+                  [activeDetailImageKey]: true,
+                }));
+              }}
+            />
+          ) : (
+            <View style={styles.fallbackCard}>
+              <Text style={styles.fallbackTitle}>Close-up image not added yet</Text>
+              <Text style={styles.fallbackText}>
+                Close-up image not added yet for {regionLabel}. Use the selection
+                buttons on the right for now.
+              </Text>
+            </View>
+          )}
+        </View>
+      </View>
+    );
   }
 
-  return activeRegion.closeUpHotspots;
-}
+  function renderSidePanel() {
+    const chips = activeDetailRegion?.chips ?? [];
 
-export function BodyMap({
-  selectedBodyArea,
-  onSelect,
-  onClear,
-}: {
-  selectedBodyArea?: string;
-  onSelect: (bodyArea: string) => void;
-  onClear: () => void;
-}) {
-  const [viewMode, setViewMode] = useState<'front' | 'back'>('front');
-  const [activeRegion, setActiveRegion] = useState<BodyMapPrimaryRegion | null>(null);
-  const { width } = useWindowDimensions();
-  const wideLayout = width >= 900;
+    return (
+      <View style={styles.sidePanel}>
+        <View style={styles.selectedCard}>
+          <Text style={styles.kicker}>SELECTED AREA</Text>
+          <Text style={styles.selectedTitle}>{visibleSelectedLabel}</Text>
+          <Text style={styles.bodyCopy}>
+            The body map helps Azul localize your question. It does not auto-run
+            analysis.
+          </Text>
 
-  const helperCopy = useMemo(() => {
-    if (activeRegion) {
-      return `Select a more precise area inside ${activeRegion.closeUpTitle}.`;
-    }
-
-    if (!selectedBodyArea) {
-      return 'Tap near the area that feels affected. Azul will use it as location context.';
-    }
-
-    return `Azul will include ${selectedBodyArea} as location context the next time you analyze your question.`;
-  }, [activeRegion, selectedBodyArea]);
-
-  const selectedLabel = activeRegion ? `${activeRegion.label} detail` : selectedBodyArea ?? 'None selected yet';
-  const closeUpHotspots = useMemo(() => getCloseUpHotspotsForPanel(activeRegion), [activeRegion]);
-
-  return (
-    <View style={styles.card}>
-      <View style={styles.topRow}>
-        <View style={styles.copyBlock}>
-          <Text style={styles.eyebrow}>Visual Body Map</Text>
-          <Text style={styles.title}>{activeRegion ? activeRegion.closeUpTitle : 'Tap an area to add location context to your question.'}</Text>
-          <Text style={styles.helper}>{helperCopy}</Text>
-        </View>
-        {!activeRegion ? (
-          <View style={styles.toggleRow}>
-            {(['front', 'back'] as const).map((mode) => (
-              <Pressable
-                key={mode}
-                onPress={() => setViewMode(mode)}
-                style={[styles.toggleButton, viewMode === mode && styles.toggleButtonActive]}
-              >
-                <Text style={[styles.toggleLabel, viewMode === mode && styles.toggleLabelActive]}>
-                  {mode === 'front' ? 'Front' : 'Back'}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        ) : null}
-      </View>
-
-      <View style={[styles.contentRow, wideLayout && styles.contentRowWide]}>
-        <View style={[styles.visualPanel, wideLayout && styles.visualPanelWide]}>
-          {activeRegion ? (
-            <Pressable style={styles.backButton} onPress={() => setActiveRegion(null)}>
-              <Text style={styles.backButtonLabel}>Back to Full Body</Text>
-            </Pressable>
-          ) : null}
-          <BodyMapVisual
-            viewMode={viewMode}
-            selectedBodyArea={selectedBodyArea}
-            activeRegion={activeRegion}
-            onSelectRegion={(region) => {
-              setActiveRegion(region);
-              if (!selectedBodyArea) {
-                onSelect(region.label);
-              }
-            }}
-            onSelectHotspot={(hotspot) => onSelect(hotspot.displayName)}
-          />
+          <Pressable onPress={handleClearSelection} style={styles.clearButton}>
+            <Text style={styles.clearButtonText}>Clear selection</Text>
+          </Pressable>
         </View>
 
-        <View style={[styles.sidePanel, wideLayout && styles.sidePanelWide]}>
-          <View style={styles.selectionCard}>
-            <Text style={styles.selectionLabel}>Selected area</Text>
-            <Text style={styles.selectionValue}>{selectedLabel}</Text>
-            <Text style={styles.selectionHint}>
-              The body map helps Azul localize your question. It does not auto-run analysis.
+        {activeDetailRegion ? (
+          <View style={styles.chipCard}>
+            <Text style={styles.cardTitle}>Close-Up Selection</Text>
+            <Text style={styles.bodyCopy}>
+              Choose the most precise hotspot you can identify. The selected label is
+              passed back into Azul as context.
             </Text>
-            {selectedBodyArea ? (
-              <Pressable
-                onPress={() => {
-                  setActiveRegion(null);
-                  onClear();
-                }}
-                style={styles.clearButton}
-              >
-                <Text style={styles.clearButtonLabel}>Clear selection</Text>
-              </Pressable>
-            ) : null}
-          </View>
 
-          <View style={styles.legendCard}>
-            <Text style={styles.legendTitle}>{activeRegion ? 'Close-Up Selection' : 'Full Body Selection'}</Text>
-            <Text style={styles.legendBody}>
-              {activeRegion
-                ? 'Choose the most precise hotspot you can identify. The selected label is passed back into Azul as context.'
-                : 'Start with a broad region, then move into a close-up map for more precise targeting.'}
-            </Text>
-            {closeUpHotspots.length ? (
-              <View style={styles.hotspotButtonWrap}>
-                {closeUpHotspots.map((hotspot) => (
+            <View style={styles.chipWrap}>
+              {chips.map((chip) => {
+                const isActive = selectedBodyArea === chip;
+
+                return (
                   <Pressable
-                    key={hotspot.id}
-                    style={[
-                      styles.hotspotButton,
-                      selectedBodyArea === hotspot.displayName && styles.hotspotButtonActive,
-                    ]}
-                    onPress={() => onSelect(hotspot.displayName)}
+                    key={chip}
+                    onPress={() => handleChipPress(chip)}
+                    style={[styles.chip, isActive ? styles.chipActive : null]}
                   >
-                    <Text
-                      style={[
-                        styles.hotspotButtonLabel,
-                        selectedBodyArea === hotspot.displayName && styles.hotspotButtonLabelActive,
-                      ]}
-                    >
-                      {hotspot.displayName}
+                    <Text style={[styles.chipText, isActive ? styles.chipTextActive : null]}>
+                      {chip}
                     </Text>
                   </Pressable>
-                ))}
-              </View>
-            ) : null}
+                );
+              })}
+            </View>
           </View>
+        ) : (
+          <View style={styles.chipCard}>
+            <Text style={styles.cardTitle}>Full Body Selection</Text>
+            <Text style={styles.bodyCopy}>
+              Start with a broad region, then move into a close-up map for more precise
+              targeting.
+            </Text>
+          </View>
+        )}
+      </View>
+    );
+  }
+
+  const title = activeDetailRegion
+    ? `${activeDetailRegion.label} Detail`
+    : "Tap an area to add location context to your question.";
+
+  const helper = activeDetailRegion
+    ? `Select a more precise area inside ${activeDetailRegion.label} Detail.`
+    : "Tap near the area that feels affected. Azul will use it as location context before you analyze.";
+
+  return (
+    <View style={styles.section}>
+      <Text style={styles.kicker}>VISUAL BODY MAP</Text>
+      <Text style={styles.title}>{title}</Text>
+      <Text style={styles.helper}>{helper}</Text>
+
+      {!activeDetailRegion ? (
+        <View style={styles.toggleRow}>
+          <Pressable
+            onPress={() => setView("front")}
+            style={[styles.toggleButton, view === "front" ? styles.toggleButtonActive : null]}
+          >
+            <Text
+              style={[
+                styles.toggleText,
+                view === "front" ? styles.toggleTextActive : null,
+              ]}
+            >
+              Front
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => setView("back")}
+            style={[styles.toggleButton, view === "back" ? styles.toggleButtonActive : null]}
+          >
+            <Text
+              style={[
+                styles.toggleText,
+                view === "back" ? styles.toggleTextActive : null,
+              ]}
+            >
+              Back
+            </Text>
+          </Pressable>
         </View>
+      ) : null}
+
+      <View style={styles.mapLayout}>
+        <View style={styles.mapPanel}>
+          {activeDetailRegion ? renderDetailMap() : renderFullBodyMap()}
+        </View>
+
+        {renderSidePanel()}
       </View>
     </View>
   );
 }
 
+const navy = "#072b72";
+const gold = "#d8b637";
+const slatePanel = "#edf3f8";
+const lightBorder = "#dbe4ef";
+const softText = "#334155";
+
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 28,
+  section: {
+    backgroundColor: "#ffffff",
+    borderRadius: 24,
     padding: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 35, 102, 0.08)',
-    gap: 18,
+    marginVertical: 12,
   },
-  topRow: {
-    gap: 12,
-  },
-  copyBlock: {
-    gap: 6,
-  },
-  eyebrow: {
-    color: COLORS.gold,
-    textTransform: 'uppercase',
-    letterSpacing: 2.2,
+  kicker: {
+    color: gold,
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: "800",
+    letterSpacing: 4,
+    marginBottom: 8,
+    textTransform: "uppercase",
   },
   title: {
-    color: COLORS.navy,
-    fontSize: 22,
-    lineHeight: 28,
-    fontWeight: '700',
+    color: navy,
+    fontSize: 24,
+    fontWeight: "900",
+    marginBottom: 6,
   },
   helper: {
-    color: COLORS.ink,
+    color: softText,
     fontSize: 14,
-    lineHeight: 21,
+    marginBottom: 16,
   },
   toggleRow: {
-    flexDirection: 'row',
-    gap: 8,
-    alignSelf: 'flex-start',
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 16,
   },
   toggleButton: {
-    minHeight: 36,
-    minWidth: 72,
+    backgroundColor: "#edf2f7",
     borderRadius: 999,
-    backgroundColor: '#EFF3F8',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 14,
+    paddingHorizontal: 22,
+    paddingVertical: 10,
   },
   toggleButtonActive: {
-    backgroundColor: COLORS.navy,
+    backgroundColor: navy,
   },
-  toggleLabel: {
-    color: COLORS.slate,
-    fontSize: 12,
-    fontWeight: '700',
+  toggleText: {
+    color: "#64748b",
+    fontWeight: "800",
   },
-  toggleLabelActive: {
-    color: '#FFFFFF',
+  toggleTextActive: {
+    color: "#ffffff",
   },
-  contentRow: {
-    gap: 16,
+  mapLayout: {
+    flexDirection: "row",
+    gap: 18,
+    alignItems: "stretch",
   },
-  contentRowWide: {
-    flexDirection: 'row',
-    alignItems: 'stretch',
-  },
-  visualPanel: {
-    height: 620,
-    borderRadius: 30,
-    backgroundColor: COLORS.mist,
+  mapPanel: {
+    flex: 1.8,
+    backgroundColor: slatePanel,
+    borderColor: lightBorder,
     borderWidth: 1,
-    borderColor: COLORS.line,
-    paddingHorizontal: 8,
-    paddingVertical: 10,
-    justifyContent: 'center',
-  },
-  assetCanvas: {
-    flex: 1,
-    cursor: 'pointer',
-  },
-  overlaySvg: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  visualPanelWide: {
-    flex: 1.4,
-  },
-  assetImage: {
-    width: '100%',
-    height: '100%',
-  },
-  backButton: {
-    alignSelf: 'flex-start',
-    minHeight: 36,
-    borderRadius: 999,
-    backgroundColor: 'rgba(0, 35, 102, 0.08)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 14,
-    marginBottom: 10,
-  },
-  backButtonLabel: {
-    color: COLORS.navy,
-    fontSize: 12,
-    fontWeight: '700',
+    borderRadius: 22,
+    minHeight: 540,
+    overflow: "hidden",
   },
   sidePanel: {
-    gap: 12,
+    flex: 1,
+    gap: 14,
   },
-  sidePanelWide: {
-    flex: 0.8,
-  },
-  selectionCard: {
-    borderRadius: 22,
-    backgroundColor: '#F8FAFD',
+  selectedCard: {
+    backgroundColor: "#f8fafc",
+    borderColor: lightBorder,
     borderWidth: 1,
-    borderColor: COLORS.line,
-    padding: 16,
-    gap: 8,
+    borderRadius: 18,
+    padding: 18,
   },
-  selectionLabel: {
-    color: COLORS.gold,
-    textTransform: 'uppercase',
-    letterSpacing: 1.8,
-    fontSize: 11,
-    fontWeight: '700',
+  selectedTitle: {
+    color: navy,
+    fontSize: 24,
+    fontWeight: "900",
+    marginBottom: 8,
   },
-  selectionValue: {
-    color: COLORS.navy,
-    fontSize: 22,
-    lineHeight: 28,
-    fontWeight: '700',
-  },
-  selectionHint: {
-    color: COLORS.ink,
+  bodyCopy: {
+    color: softText,
     fontSize: 14,
     lineHeight: 21,
   },
   clearButton: {
-    marginTop: 4,
-    alignSelf: 'flex-start',
-    minHeight: 38,
+    alignSelf: "flex-start",
+    backgroundColor: "#e9eff6",
     borderRadius: 999,
-    backgroundColor: 'rgba(0, 35, 102, 0.08)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 14,
+    marginTop: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
   },
-  clearButtonLabel: {
-    color: COLORS.navy,
-    fontSize: 13,
-    fontWeight: '700',
+  clearButtonText: {
+    color: navy,
+    fontWeight: "900",
   },
-  legendCard: {
-    borderRadius: 22,
-    backgroundColor: '#FFFFFF',
+  chipCard: {
+    backgroundColor: "#ffffff",
+    borderColor: lightBorder,
     borderWidth: 1,
-    borderColor: COLORS.line,
+    borderRadius: 18,
+    padding: 18,
+  },
+  cardTitle: {
+    color: navy,
+    fontSize: 17,
+    fontWeight: "900",
+    marginBottom: 10,
+  },
+  chipWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 14,
+  },
+  chip: {
+    backgroundColor: "#edf2f7",
+    borderColor: lightBorder,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  chipActive: {
+    backgroundColor: gold,
+    borderColor: gold,
+  },
+  chipText: {
+    color: "#334155",
+    fontWeight: "800",
+    fontSize: 13,
+  },
+  chipTextActive: {
+    color: navy,
+  },
+  imageStage: {
+    flex: 1,
+    minHeight: 540,
+    alignItems: "center",
+    justifyContent: "center",
     padding: 16,
-    gap: 10,
   },
-  legendTitle: {
-    color: COLORS.navy,
-    fontSize: 15,
-    fontWeight: '700',
+  fullBodyImageWrap: {
+    position: "relative",
+    width: 380,
+    height: 520,
+    maxWidth: "96%",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  legendBody: {
-    color: COLORS.ink,
+  fullBodyImage: {
+    width: "100%",
+    height: "100%",
+  },
+  fullBodyHotspot: {
+    position: "absolute",
+    backgroundColor: "transparent",
+  },
+  debugHotspot: {
+    backgroundColor: "rgba(216, 182, 55, 0.24)",
+    borderColor: gold,
+    borderWidth: 1,
+    borderRadius: 12,
+  },
+  backButton: {
+    position: "absolute",
+    left: 14,
+    top: 14,
+    zIndex: 5,
+    backgroundColor: "#dfe8f3",
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+  },
+  backButtonText: {
+    color: navy,
+    fontWeight: "900",
+    fontSize: 13,
+  },
+  detailImageWrap: {
+    width: "78%",
+    height: "84%",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  detailImage: {
+    width: "100%",
+    height: "100%",
+  },
+  fallbackCard: {
+    maxWidth: 420,
+    backgroundColor: "#ffffff",
+    borderColor: lightBorder,
+    borderWidth: 1,
+    borderRadius: 18,
+    padding: 22,
+    alignItems: "center",
+  },
+  fallbackTitle: {
+    color: navy,
+    fontWeight: "900",
+    fontSize: 18,
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  fallbackText: {
+    color: softText,
     fontSize: 14,
     lineHeight: 21,
-  },
-  hotspotButtonWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 4,
-  },
-  hotspotButton: {
-    minHeight: 34,
-    borderRadius: 999,
-    backgroundColor: '#EEF3F8',
-    borderWidth: 1,
-    borderColor: COLORS.line,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 10,
-  },
-  hotspotButtonActive: {
-    backgroundColor: 'rgba(212, 175, 55, 0.16)',
-    borderColor: 'rgba(212, 175, 55, 0.45)',
-  },
-  hotspotButtonLabel: {
-    color: COLORS.ink,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  hotspotButtonLabelActive: {
-    color: COLORS.navy,
+    textAlign: "center",
   },
 });
+
+export default BodyMap;

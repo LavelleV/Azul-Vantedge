@@ -86,13 +86,15 @@ export function DashboardScreen({
         />
         <BodyMap
           selectedBodyArea={selectedBodyArea}
-          onClear={() => setSelectedBodyArea('')}
           onSelect={(bodyArea) => {
-            setSelectedBodyArea(bodyArea);
-            if (!question.trim()) {
-              setQuestion(bodyArea);
-            }
-          }}
+  const nextBodyArea = bodyArea ?? "";
+
+  setSelectedBodyArea(nextBodyArea);
+
+  if (bodyArea && !question.trim()) {
+    setQuestion(bodyArea);
+  }
+}}
         />
         <SessionHistory
           sessions={sessions}
