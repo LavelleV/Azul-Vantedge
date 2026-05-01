@@ -1,6 +1,7 @@
 import { containsRedFlag } from '../data/safetyRules';
 import type { DeviceModel } from '../data/deviceModels';
-
+import { buildNumberedProtocolPlan } from './protocolPlanRules';
+import { buildPlainLanguagePadPlacement } from './padPlacementRules';
 export type UserMode = 'client' | 'practitioner';
 
 export type VibeJournalData = {
@@ -68,6 +69,94 @@ function buildContext(input: AzulAgentInput): GuidanceContext {
   };
 }
 
+function inferProtocolArea(input: AzulAgentInput, context: GuidanceContext): string {
+  if (input.selectedBodyArea) {
+    return input.selectedBodyArea;
+  }
+
+  const q = context.normalizedQuestion;
+
+  if (hasTerm(q, ['inner knee', 'inside knee', 'medial knee', 'below inner knee', 'back inner knee', 'knee', 'kneecap', 'patella', 'below knee', 'under kneecap', 'stairs', 'stiff knee'])) {
+    return 'Knee';
+  }
+
+  if (hasTerm(q, ['rotator cuff', 'shoulder', 'limited range', 'rom', 'abduction', 'impingement'])) {
+    return 'Shoulder';
+  }
+
+  if (hasTerm(q, ['si joint', 'sacroiliac', 'low back', 'facet', 'hip dimple'])) {
+    return 'Low Back / SI';
+  }
+
+  if (hasTerm(q, ['hamstring', 'butt cheek crease', 'sit bone', 'ischial tuberosity', 'quad', 'thigh', 'adductor', 'it band'])) {
+    return 'Thigh';
+  }
+
+  if (hasTerm(q, ['hip', 'glute', 'butt', 'buttock', 'cheek', 'butt cheek', 'piriformis', 'deep hip', 'side hip', 'hip stiffness', 'hip pain', 'glute pain', 'sitting pain'])) {
+    return 'Hip / Glute';
+  }
+
+  if (hasTerm(q, ['calf', 'shin', 'lower leg', 'achilles'])) {
+    return 'Lower Leg';
+  }
+
+  if (hasTerm(q, ['ankle', 'inner ankle', 'foot', 'heel', 'arch', 'toe', 'toes'])) {
+    return 'Foot / Ankle';
+  }
+
+  if (hasTerm(q, ['wrist', 'hand', 'finger', 'fingers', 'forearm', 'elbow'])) {
+    return 'Wrist / Hand';
+  }
+
+  if (hasTerm(q, ['neck', 'cervical', 'base of skull'])) {
+    return 'Neck';
+  }
+
+  if (hasTerm(q, ['chest', 'rib', 'sternum', 'intercostal', 'pectoral'])) {
+    return 'Chest / Ribs';
+  }
+
+  if (hasTerm(q, ['abdomen', 'gut', 'stomach', 'bloat'])) {
+    return 'Abdomen / Gut';
+  }
+
+  if (hasTerm(q, ['focus', 'brain fog', 'motivation', 'memory', 'dementia', 'alzheimer', 'frontotemporal', 'brain health', 'head', 'face', 'jaw', 'tmj', 'temple'])) {
+    return 'Head / Face / Jaw';
+  }
+
+  if (hasTerm(q, ['anxiety', 'anxious', 'panic', 'stress', 'overwhelmed', 'racing thoughts'])) {
+    return 'Nervous System / Stress';
+  }
+
+  if (hasTerm(q, ['full body', 'systemic', 'whole body', 'fatigue', 'heaviness'])) {
+    return 'Full Body / Systemic';
+  }
+
+  return '';
+}
+
+function finalizeResponse(
+  input: AzulAgentInput,
+  context: GuidanceContext,
+  response: AzulAgentResponse
+): AzulAgentResponse {
+  const protocolArea = inferProtocolArea(input, context);
+  const selectedAreaForRules = protocolArea || input.selectedBodyArea;
+
+  return {
+    ...response,
+    bestStartingProtocol: buildNumberedProtocolPlan({
+      userQuestion: input.userQuestion,
+      selectedBodyArea: selectedAreaForRules,
+      activeDeviceModel: input.activeDeviceModel,
+    }),
+    padPlacement: buildPlainLanguagePadPlacement({
+      userQuestion: input.userQuestion,
+      selectedBodyArea: selectedAreaForRules,
+    }),
+  };
+}
+
 function withMassageIntegration(response: AzulAgentResponse, items: string[]) {
   return {
     ...response,
@@ -88,6 +177,11 @@ function buildBaseResponse(): AzulAgentResponse {
   };
 }
 
+/**
+ * Existing local/mock guidance builders remain mostly intact.
+ * finalizeResponse() replaces their Protocol Plan with the updated device-specific protocol numbers.
+ */
+
 function buildKneeGuidance(input: AzulAgentInput, context: GuidanceContext): AzulAgentResponse {
   const tendonSpecific = hasTerm(context.normalizedQuestion, ['tendon', 'stairs', 'below kneecap', 'under kneecap', 'patellar tendon']);
   const posteriorMention = hasTerm(context.normalizedQuestion, ['behind knee', 'posterior knee', 'back of knee']);
@@ -98,16 +192,6 @@ function buildKneeGuidance(input: AzulAgentInput, context: GuidanceContext): Azu
     tendonSpecific
       ? 'This often points toward a tendon-heavy irritation pattern, especially if stairs or loading make it more noticeable.'
       : 'This does not diagnose the issue, but it gives us a smart starting point for swelling, pressure, and stiffness around the kneecap.',
-  ];
-  response.bestStartingProtocol = [
-    tendonSpecific
-      ? 'Primary: #26 Tendon Injury — start here if the tenderness feels very tendon-specific, especially below the kneecap or with stairs.'
-      : 'Primary: #19 Joint Swell — start here if the knee feels puffy, irritated, stiff, or inflamed.',
-    'Add-on: #26 Tendon Injury — use this next if the pain feels sharp at the patellar tendon or is tied to stairs, jumping, or tendon load.',
-    'Optional sequence: Run #19 first, then #26 if the knee feels less swollen but still very tendon-sensitive.',
-    context.homeModel
-      ? 'Professional option: With the Home Model, this is supportive guidance. A stubborn or more advanced knee presentation may need Lavelle’s Professional or Clinical Suite support.'
-      : 'Professional option: if the knee is more layered or not improving, broader sequencing may be appropriate while staying within wellness boundaries.',
   ];
   response.padPlacement = [
     'Pad 1: Place one pad just above the kneecap on the lower thigh. This is the Quadriceps Tendon area.',
@@ -157,13 +241,6 @@ function buildInnerKneeGuidance(input: AzulAgentInput, context: GuidanceContext)
       ? 'The pulling description suggests the tissue may be load-sensitive, so the session should stay calm and precise rather than forceful.'
       : 'This does not diagnose the issue, but it gives us a smart place to start when the inside of the knee feels tender or swollen.',
   ];
-  response.bestStartingProtocol = [
-    tendonSpecific
-      ? 'Primary: #26 Tendon Injury — start here if the inside knee feels pulling, sharp, or tendon-sensitive.'
-      : 'Primary: #19 Joint Swell — start here if the inside knee feels puffy, irritated, or inflamed.',
-    'Add-on: #26 Tendon Injury — use this next if the swelling settles but the pulling or tendon discomfort remains.',
-    'Optional sequence: Run #19 first, then #26 if the inside knee feels less swollen but still strained or pulling.',
-  ];
   response.padPlacement = [
     'Pad 1: Place one pad on the inside/front of the knee, about two inches below the kneecap. This is the Pes Anserine area.',
     'Pad 2: Place the second pad on the inside/back of the knee near the soft crease. This follows the medial hamstring/popliteal area.',
@@ -177,12 +254,8 @@ function buildInnerKneeGuidance(input: AzulAgentInput, context: GuidanceContext)
     'Use easy walking or gentle bending to reassess comfort rather than deep stretching.',
     `Latest Vibe pattern: ${context.vibeSummary}.`,
   ];
-  response.aftercare = [
-    'Recheck tenderness, swelling, and bending comfort later in the day.',
-  ];
-  response.escalation = [
-    'Request Clinical Assessment with Lavelle if the inner knee remains swollen, increasingly unstable, or not improving.',
-  ];
+  response.aftercare = ['Recheck tenderness, swelling, and bending comfort later in the day.'];
+  response.escalation = ['Request Clinical Assessment with Lavelle if the inner knee remains swollen, increasingly unstable, or not improving.'];
   response.recommendAssessment = context.notImproving || context.homeModel;
 
   if (context.practitioner) {
@@ -208,14 +281,6 @@ function buildRotatorCuffGuidance(input: AzulAgentInput, context: GuidanceContex
     mentionsStiffness
       ? 'The stiffness tells us the tissue may be guarding and not sliding smoothly. The goal is not to force range today. The goal is to calm the signal first, then support cleaner movement.'
       : 'This does not diagnose the issue, but it gives us a smart starting point for shoulder support.',
-  ];
-  response.bestStartingProtocol = [
-    'Primary: #19 Joint Swell — use this first if the shoulder feels painful, hot, irritated, or inflamed.',
-    'Add-on: #21 Fascia Heal — use this when stiffness or limited range of motion is the bigger problem.',
-    'Optional sequence: Run #19 first, then #21 if the shoulder feels less reactive but still stiff.',
-    context.homeModel
-      ? 'Professional option: With the Home Model, this is supportive guidance. A deep tear, major weakness, or major loss of range should be assessed by Lavelle or a medical provider.'
-      : 'Professional option: if the shoulder is more complex or not improving, a broader sequence may be appropriate while still staying within wellness guidance.',
   ];
   response.padPlacement = [
     'Pad 1: Place one pad on the front of the shoulder, just below the collarbone where you feel the small bony point. This is the Coracoid Process.',
@@ -245,8 +310,8 @@ function buildRotatorCuffGuidance(input: AzulAgentInput, context: GuidanceContex
 
   if (context.practitioner) {
     return withMassageIntegration(response, [
-      'Massage Integration: Run #19 while performing gentle scapular mobilization and broad pectoral or posterior cuff soft-tissue support.',
-      'Massage Integration: Transition toward #21 while guiding pain-free passive range of motion. Avoid aggressive deep work directly over acutely inflamed tissue.',
+      'Massage Integration: Run the shoulder-support protocol while performing gentle scapular mobilization and broad pectoral or posterior cuff soft-tissue support.',
+      'Massage Integration: Transition toward fascia support while guiding pain-free passive range of motion. Avoid aggressive deep work directly over acutely inflamed tissue.',
     ]);
   }
 
@@ -260,13 +325,6 @@ function buildSIGuidance(input: AzulAgentInput, context: GuidanceContext): AzulA
     'This sounds like irritation around the low-back dimple area, often where the SI joint and its support tissue live.',
     'This does not diagnose the issue, but it gives us a smart starting point for local joint and support-tissue irritation.',
   ];
-  response.bestStartingProtocol = [
-    instability
-      ? 'Primary: #16 Sprains & Joint — start here if the area feels unstable, ligament-like, or easily flared.'
-      : 'Primary: #15 SI & Facet Pain — start here for point pain around the low back or sacroiliac area.',
-    'Add-on: #16 Sprains & Joint — use this next if the area feels unstable rather than only tight or sore.',
-    'Optional sequence: Run #15 first, then #16 if the pain settles but the joint still feels unstable or easily aggravated.',
-  ];
   response.padPlacement = [
     'Pad 1: Place one pad directly on the sore low-back dimple area, just to the side of the spine. This is the SI Joint / Sacroiliac area.',
     'Pad 2: Place the second pad on the front of the same-side hip, near the front hip bone. This is the ASIS / anterior hip area.',
@@ -277,12 +335,12 @@ function buildSIGuidance(input: AzulAgentInput, context: GuidanceContext): AzulA
   ];
   response.sessionTips = [
     'Hydrate well, avoid aggressive twisting immediately after the session, and use gentle walking to reassess comfort.',
-    'If the area is sharply reactive, keep manual pressure broad and supportive.',
+    instability
+      ? 'Because instability language is present, avoid aggressive stretching or deep direct pressure over the SI point.'
+      : 'If the area is sharply reactive, keep manual pressure broad and supportive.',
     `Latest Vibe pattern: ${context.vibeSummary}.`,
   ];
-  response.aftercare = [
-    'Reassess sit-to-stand comfort, stride, and point tenderness later the same day.',
-  ];
+  response.aftercare = ['Reassess sit-to-stand comfort, stride, and point tenderness later the same day.'];
   response.escalation = [
     'Request Clinical Assessment with Lavelle if the pain is not improving, is rapidly worsening, or is paired with progressive weakness, numbness, or bowel/bladder changes.',
   ];
@@ -298,18 +356,10 @@ function buildSIGuidance(input: AzulAgentInput, context: GuidanceContext): AzulA
 }
 
 function buildHamstringGuidance(input: AzulAgentInput, context: GuidanceContext): AzulAgentResponse {
-  const strain = hasTerm(context.normalizedQuestion, ['strain', 'pull', 'injury']);
   const response = buildBaseResponse();
   response.clinicalRead = [
     'This sounds like hamstring irritation near the sit bone or along the upper back of the thigh.',
     'This often points toward overload in the upper hamstring tendon, fascia, or the tissue line running down the back/inside of the thigh.',
-  ];
-  response.bestStartingProtocol = [
-    strain
-      ? 'Primary: #20 Muscle Strain/Injury — start here if it feels like a pull, strain, or fresh overload.'
-      : 'Primary: #21 Fascia Heal — start here if it feels tight, stuck, or ropey more than sharply injured.',
-    'Add-on: #20 Muscle Strain/Injury — use this next if the tissue still feels freshly strained or load-sensitive.',
-    'Optional sequence: Run #21 first, then #20 if the tissue starts loosening but the strain line still feels sharp or pulled.',
   ];
   response.padPlacement = [
     'Pad 1: Place one pad at the lower butt-cheek crease where you feel the sit bone. This is the Ischial Tuberosity.',
@@ -324,12 +374,8 @@ function buildHamstringGuidance(input: AzulAgentInput, context: GuidanceContext)
     'Hydrate, avoid aggressive stretching right away, and reassess with easy walking or light range instead of forcing length.',
     `Latest Vibe pattern: ${context.vibeSummary}.`,
   ];
-  response.aftercare = [
-    'Recheck stride length, sitting tolerance, and pulling sensation later in the day.',
-  ];
-  response.escalation = [
-    'Request Clinical Assessment with Lavelle if the hamstring is bruising, not improving, or behaving like a deeper tear pattern.',
-  ];
+  response.aftercare = ['Recheck stride length, sitting tolerance, and pulling sensation later in the day.'];
+  response.escalation = ['Request Clinical Assessment with Lavelle if the hamstring is bruising, not improving, or behaving like a deeper tear pattern.'];
   response.recommendAssessment = context.notImproving || context.homeModel;
 
   if (context.practitioner) {
@@ -349,16 +395,6 @@ function buildHipGluteGuidance(input: AzulAgentInput, context: GuidanceContext):
     'This sounds like a hip/glute interface issue.',
     'The stiffness tells us the tissue may be guarding or not sliding smoothly.',
     'The pain in the cheek area often points toward the glute or piriformis region, especially when sitting, walking, or rotating the hip feels restricted. This does not diagnose the issue, but it gives us a smart starting point.',
-  ];
-  response.bestStartingProtocol = [
-    'Primary: #21 Fascia Heal — use this first when the hip feels stiff, stuck, guarded, or restricted. The goal is to support smoother glide through the hip and glute tissue.',
-    'Add-on: #20 Muscle Strain/Injury — use this if the pain feels more muscular, like a pull, ache, or soreness in the glute or deep buttock area.',
-    'Optional sequence: Run #21 first, then #20 if the stiffness improves but the glute still feels sore or strained.',
-    'Nerve option: #24 Quick Jet/General Pain — consider this only if the pain feels sharp, burning, tingling, or travels down the leg.',
-    'SI option: #15 SI & Facet Pain — consider this if the pain feels like it starts near the low-back dimple or sacroiliac joint instead of the middle of the butt cheek.',
-    context.homeModel
-      ? 'Professional option: With the Home Model, this is supportive guidance. If pain travels down the leg, weakness is present, numbness increases, or the hip keeps locking up, request a clinical assessment with Lavelle or medical evaluation.'
-      : 'Professional option: If the pattern becomes more nerve-like, unstable, or function-limiting, broaden the plan and consider Lavelle assessment for deeper sequencing.',
   ];
   response.padPlacement = [
     'Pad 1: Place one pad directly on the sore area of the butt cheek or deep glute where the pain feels most centered. This is the Glute / Piriformis region.',
@@ -410,18 +446,6 @@ function buildAnkleGuidance(input: AzulAgentInput, context: GuidanceContext): Az
       ? 'Because neuropathy or nerve-type wording is present, the session should stay especially calm and observant rather than intense.'
       : 'This does not diagnose a vascular or neurological problem, but it gives us a smart supportive starting point.',
   ];
-  response.bestStartingProtocol = [
-    vascular
-      ? 'Primary: #60 Lymph & Swell — start here if the ankle feels puffy, heavy, or fluid-loaded.'
-      : nerve
-        ? 'Primary: #24 Quick Jet/General Pain — start here if the language sounds more nerve-irritated, burning, or tingling.'
-        : 'Primary: #85 Circulation/Vascular — use this carefully for circulation-style support language only.',
-    'Add-on: #24 Quick Jet/General Pain — use this next if burning, tingling, or nerve irritation is part of the issue.',
-    'Optional vascular support: #85 Circulation/Vascular — use only with careful, conservative language when the issue feels circulation-heavy rather than sharply painful.',
-    context.homeModel
-      ? 'Professional option: With Home Model active, stay in supportive swelling and circulation lanes and escalate if the picture feels advanced.'
-      : 'Professional option: broader sequencing may be reasonable, but red-flag vascular patterns still warrant medical care.',
-  ];
   response.padPlacement = [
     'Pad 1: Place one pad near the inside ankle bone or just behind it where the swelling or discoloration is. This is the Medial Malleolus area.',
     'Pad 2: Place the second pad higher on the inside calf, moving upward toward the knee. This follows the inner calf / great saphenous vein pathway.',
@@ -462,11 +486,6 @@ function buildAnxietyGuidance(input: AzulAgentInput, context: GuidanceContext): 
     'This sounds like a nervous system that is carrying more input than it is processing comfortably right now.',
     'This does not diagnose anxiety, but it gives us a smart starting point for calmer regulation support.',
   ];
-  response.bestStartingProtocol = [
-    'Primary: #50 Calm/Rest — start here when the body feels anxious, wired, or overstimulated.',
-    'Add-on: #58 Nervous System Reset — use this next if the stress pattern feels deeper or more whole-body.',
-    'Optional sequence: Run #50 first for the immediate anxious pattern, then #58 when the system needs a steadier recovery lane.',
-  ];
   response.padPlacement = [
     'Option 1, Pad 1: Place one pad on the forehead. Technical reference: Frontal area.',
     'Option 1, Pad 2: Place the second pad at the back of the neck near the hairline. Technical reference: Cervical-Brainstem area.',
@@ -480,9 +499,7 @@ function buildAnxietyGuidance(input: AzulAgentInput, context: GuidanceContext): 
     'Hydrate and stay seated or reclined for a few minutes afterward before jumping back into stimulation.',
     `Latest Vibe pattern: ${context.vibeSummary}.`,
   ];
-  response.aftercare = [
-    'Reassess whether the body feels more settled, less activated, or easier to regulate over the next hour.',
-  ];
+  response.aftercare = ['Reassess whether the body feels more settled, less activated, or easier to regulate over the next hour.'];
   response.escalation = [
     'Request Clinical Assessment with Lavelle if the nervous system remains highly activated, if panic symptoms are escalating, or if the pattern feels too layered for self-guided support.',
   ];
@@ -506,12 +523,6 @@ function buildBrainGuidance(input: AzulAgentInput, context: GuidanceContext): Az
       ? 'If there is a diagnosed neurological condition, this guidance should stay educational only and be used with physician or neurologist oversight.'
       : 'This does not diagnose a neurological issue, but it gives us a smart starting point for clarity and regulation support.',
   ];
-  response.bestStartingProtocol = [
-    'Primary: #45 Attn/Focus — start here when brain fog, focus, or motivation is the main complaint.',
-    'Add-on: #58 Nervous System Reset — use this next if the pattern feels stress-driven or overstimulated.',
-    'Optional sequence: Run #45 first, then #58 if the system feels overloaded rather than simply unfocused.',
-    'Professional option: #84 Full Body Inflammation/Systemic Reset — consider this when the issue feels more whole-body heavy or fatigued than purely cognitive.',
-  ];
   response.padPlacement = [
     'Pad 1: Place one pad on the forehead, centered above the eyebrows. This is the Frontal area.',
     'Pad 2: Place the second pad at the back of the neck at the base of the skull. This is the Cervical-Brainstem area.',
@@ -525,9 +536,7 @@ function buildBrainGuidance(input: AzulAgentInput, context: GuidanceContext): Az
     'Hydrate and reassess clarity, fatigue, and stress tone later rather than expecting an immediate dramatic shift.',
     `Latest Vibe pattern: ${context.vibeSummary}.`,
   ];
-  response.aftercare = [
-    'Reassess focus quality, calmness, and fatigue later the same day.',
-  ];
+  response.aftercare = ['Reassess focus quality, calmness, and fatigue later the same day.'];
   response.escalation = diagnosedNeuro
     ? ['Use under medical supervision for diagnosed neurological conditions, and request Clinical Assessment with Lavelle if you want supportive protocol sequencing layered more carefully.']
     : ['Request Clinical Assessment with Lavelle if focus remains poor, the issue feels systemic, or the person is not improving.'];
@@ -551,11 +560,11 @@ function buildFallbackGuidance(input: AzulAgentInput, context: GuidanceContext):
     return buildKneeGuidance({ ...input, userQuestion: `${input.userQuestion} knee` }, context);
   }
 
-  if (context.selectedBodyArea === 'Ankle / Foot') {
-    return buildAnkleGuidance({ ...input, userQuestion: `${input.userQuestion} ankle` }, context);
+  if (context.selectedBodyArea === 'Foot / Ankle' || context.selectedBodyArea === 'Ankle / Foot') {
+    return buildAnkleGuidance({ ...input, userQuestion: `${input.userQuestion} ankle foot` }, context);
   }
 
-  if (context.selectedBodyArea === 'Hip') {
+  if (context.selectedBodyArea === 'Hip' || context.selectedBodyArea === 'Hip / Glute' || context.selectedBodyArea === 'Hip / Glute / Pelvis') {
     return buildHipGluteGuidance({ ...input, userQuestion: `${input.userQuestion} hip glute` }, context);
   }
 
@@ -563,7 +572,7 @@ function buildFallbackGuidance(input: AzulAgentInput, context: GuidanceContext):
     return buildSIGuidance({ ...input, userQuestion: `${input.userQuestion} si joint low back` }, context);
   }
 
-  if (context.selectedBodyArea === 'Head / Brain') {
+  if (context.selectedBodyArea === 'Head / Brain' || context.selectedBodyArea === 'Head / Face / Jaw') {
     return buildBrainGuidance({ ...input, userQuestion: `${input.userQuestion} brain focus` }, context);
   }
 
@@ -577,17 +586,11 @@ function buildFallbackGuidance(input: AzulAgentInput, context: GuidanceContext):
       'This sounds like a body-area question centered around the abdomen or gut region.',
       'Abdominal symptoms should be approached conservatively. This does not diagnose the issue, but it tells us to stay measured and safety-aware.',
     ];
-    response.bestStartingProtocol = [
-      'Primary: Use conservative educational guidance first rather than aggressive protocol assumptions.',
-      'Professional option: If abdominal discomfort is significant, unusual, or worsening, request Clinical Assessment with Lavelle and consider medical evaluation.',
-    ];
     response.padPlacement = [
       'Pad 1: If using supportive wellness placement, place one pad on the upper abdomen away from sharp or highly tender points.',
       'Pad 2: Place the second pad lower on the abdomen with enough space to avoid crowding one sore spot.',
     ];
-    response.whyThisPlacement = [
-      'The goal is to keep the setup broad and calm rather than over-focusing on abdominal discomfort.',
-    ];
+    response.whyThisPlacement = ['The goal is to keep the setup broad and calm rather than over-focusing on abdominal discomfort.'];
     response.sessionTips = [
       'Keep intensity very comfortable, stay conservative, and stop if symptoms worsen or feel unusual.',
       `Latest Vibe pattern: ${context.vibeSummary}.`,
@@ -604,17 +607,11 @@ function buildFallbackGuidance(input: AzulAgentInput, context: GuidanceContext):
       'This sounds like a more whole-body or systemic support question rather than one single local tissue issue.',
       'That often calls for a broader recovery and regulation plan instead of a spot treatment mindset.',
     ];
-    response.bestStartingProtocol = [
-      'Primary: #84 Full Body Inflammation/Systemic Reset — use this when the person describes fatigue, heaviness, or whole-body inflammatory load.',
-      'Add-on: #58 Nervous System Reset — use this next if stress overload is clearly part of the systemic picture.',
-    ];
     response.padPlacement = [
       'Pad 1: Place one pad on the upper body where broad regulation feels comfortable, often upper torso or back of neck support.',
       'Pad 2: Place the second pad on the lower body to create a larger top-to-bottom support field.',
     ];
-    response.whyThisPlacement = [
-      'This supports a broader systemic field rather than focusing only on one local area.',
-    ];
+    response.whyThisPlacement = ['This supports a broader systemic field rather than focusing only on one local area.'];
     response.sessionTips = [
       'Keep intensity conservative, hydrate well, and assess whether the body feels calmer, clearer, or less heavy over time.',
       `Latest Vibe pattern: ${context.vibeSummary}.`,
@@ -635,14 +632,6 @@ function buildFallbackGuidance(input: AzulAgentInput, context: GuidanceContext):
       ? 'Some of the wording may suggest a red-flag pattern, so wellness guidance should pause and medical care should be considered promptly.'
       : 'This is educational guidance intended to support device use, not diagnose, cure, or replace medical care.',
   ];
-  response.bestStartingProtocol = [
-    'Primary: Start with the most conservative protocol that matches the body region and tissue behavior rather than jumping immediately to an aggressive sequence.',
-    'Add-on: Once the first response is clearer, a second protocol can be layered more intelligently instead of guessing too early.',
-    'Optional sequence: Let the first session tell you whether the issue behaves more like swelling, strain, nerve irritation, or systemic overload before adding complexity.',
-    context.homeModel
-      ? 'Professional option: With Home Model active, stay in supportive recovery lanes unless Lavelle upgrades the sequence clinically.'
-      : 'With Professional Model or Clinical Suite active, broader sequencing may be appropriate once the tissue pattern is clearer.',
-  ];
   response.padPlacement = [
     input.selectedBodyArea
       ? `Pad 1: Place one pad just above or before the main ${input.selectedBodyArea} complaint area.`
@@ -658,9 +647,7 @@ function buildFallbackGuidance(input: AzulAgentInput, context: GuidanceContext):
     'Hydrate, keep the first session conservative, and stop if symptoms worsen or the tissue becomes more reactive.',
     `Latest Vibe pattern: ${context.vibeSummary}.`,
   ];
-  response.aftercare = [
-    'Reassess the area later in the day and again the next morning before escalating intensity or duration.',
-  ];
+  response.aftercare = ['Reassess the area later in the day and again the next morning before escalating intensity or duration.'];
   response.escalation = context.redFlag
     ? ['Seek medical care if the question reflects red-flag symptoms, and request Clinical Assessment with Lavelle only after safety concerns are appropriately handled.']
     : ['Request Clinical Assessment with Lavelle if the issue is complex, not improving, or likely needs Professional or Clinical Suite sequencing.'];
@@ -688,43 +675,31 @@ export async function generateAzulResponse(
   const context = buildContext(input);
   const q = context.normalizedQuestion;
 
+  let response: AzulAgentResponse;
+
   if (hasTerm(q, ['inner knee', 'inside knee', 'medial knee', 'below inner knee', 'back inner knee'])) {
-    return buildInnerKneeGuidance(input, context);
+    response = buildInnerKneeGuidance(input, context);
+  } else if (hasTerm(q, ['knee', 'kneecap', 'patella', 'below knee', 'under kneecap', 'stairs', 'swelling', 'stiff knee'])) {
+    response = buildKneeGuidance(input, context);
+  } else if (hasTerm(q, ['rotator cuff', 'shoulder', 'limited range', 'rom', 'abduction', 'stiffness', 'impingement'])) {
+    response = buildRotatorCuffGuidance(input, context);
+  } else if (hasTerm(q, ['si joint', 'sacroiliac', 'low back', 'facet', 'hip dimple'])) {
+    response = buildSIGuidance(input, context);
+  } else if (hasTerm(q, ['hamstring', 'butt cheek crease', 'sit bone', 'ischial tuberosity'])) {
+    response = buildHamstringGuidance(input, context);
+  } else if (hasTerm(q, ['hip', 'glute', 'butt', 'buttock', 'cheek', 'butt cheek', 'piriformis', 'deep hip', 'side hip', 'hip stiffness', 'hip pain', 'glute pain', 'sitting pain'])) {
+    response = buildHipGluteGuidance(input, context);
+  } else if (hasTerm(q, ['ankle', 'inner ankle', 'foot', 'heel', 'arch', 'toe', 'toes', 'neuropathy', 'venous', 'purple', 'dark', 'swollen', 'puffy', 'circulation'])) {
+    response = buildAnkleGuidance(input, context);
+  } else if (hasTerm(q, ['anxiety', 'anxious', 'panic', 'stress', 'overwhelmed', 'racing thoughts'])) {
+    response = buildAnxietyGuidance(input, context);
+  } else if (hasTerm(q, ['focus', 'brain fog', 'motivation', 'memory', 'dementia', 'alzheimer', 'frontotemporal', 'brain health'])) {
+    response = buildBrainGuidance(input, context);
+  } else {
+    response = buildFallbackGuidance(input, context);
   }
 
-  if (hasTerm(q, ['knee', 'kneecap', 'patella', 'below knee', 'under kneecap', 'stairs', 'swelling', 'stiff knee'])) {
-    return buildKneeGuidance(input, context);
-  }
-
-  if (hasTerm(q, ['rotator cuff', 'shoulder', 'limited range', 'rom', 'abduction', 'stiffness', 'impingement'])) {
-    return buildRotatorCuffGuidance(input, context);
-  }
-
-  if (hasTerm(q, ['si joint', 'sacroiliac', 'low back', 'facet', 'hip dimple'])) {
-    return buildSIGuidance(input, context);
-  }
-
-  if (hasTerm(q, ['hamstring', 'butt cheek crease', 'sit bone', 'ischial tuberosity'])) {
-    return buildHamstringGuidance(input, context);
-  }
-
-  if (hasTerm(q, ['hip', 'glute', 'butt', 'buttock', 'cheek', 'butt cheek', 'piriformis', 'deep hip', 'side hip', 'hip stiffness', 'hip pain', 'glute pain', 'sitting pain'])) {
-    return buildHipGluteGuidance(input, context);
-  }
-
-  if (hasTerm(q, ['ankle', 'inner ankle', 'neuropathy', 'venous', 'purple', 'dark', 'swollen', 'puffy', 'circulation'])) {
-    return buildAnkleGuidance(input, context);
-  }
-
-  if (hasTerm(q, ['anxiety', 'anxious', 'panic', 'stress', 'overwhelmed', 'racing thoughts'])) {
-    return buildAnxietyGuidance(input, context);
-  }
-
-  if (hasTerm(q, ['focus', 'brain fog', 'motivation', 'memory', 'dementia', 'alzheimer', 'frontotemporal', 'brain health'])) {
-    return buildBrainGuidance(input, context);
-  }
-
-  return buildFallbackGuidance(input, context);
+  return finalizeResponse(input, context, response);
 }
 
 // Internal test cases
