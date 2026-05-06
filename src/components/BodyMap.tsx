@@ -29,9 +29,15 @@ import {
   BODY_MAP_MANIFEST,
   BodyMapView,
   FULL_BODY_HOTSPOTS,
+  PadPlacementImageFile,
   RegionImageFile,
   StableBodyRegionId,
 } from "../data/bodyMapRegions";
+
+import {
+  getPadPlacementRule,
+  PadPlacementRule,
+} from "../services/padPlacementRules";
 
 const SHOW_HOTSPOT_DEBUG = false;
 
@@ -41,6 +47,7 @@ const SHOW_HOTSPOT_DEBUG = false;
  * Only include files that physically exist in assets/body-map/regions.
  * Do not use dynamic require strings.
  * Do not substitute unrelated images.
+ * Missing images must show fallback, not blank.
  */
 const REGION_DETAIL_IMAGES: Partial<Record<RegionImageFile, ImageSourcePropType>> = {
   "abdomen-front.png": abdomenFrontImage as ImageSourcePropType,
@@ -56,6 +63,20 @@ const REGION_DETAIL_IMAGES: Partial<Record<RegionImageFile, ImageSourcePropType>
   "shoulder-front.png": shoulderFrontImage as ImageSourcePropType,
   "thigh-front.png": thighFrontImage as ImageSourcePropType,
 };
+
+/**
+ * LOCKED PAD-PLACEMENT IMAGE SOURCE MAP
+ *
+ * Add explicit static imports here only after the matching files physically exist
+ * in assets/body-map/pad-placement.
+ *
+ * Do not use dynamic require strings.
+ * Do not substitute unrelated placement images.
+ * Missing placement images must show fallback, not blank.
+ */
+const PAD_PLACEMENT_IMAGES: Partial<
+  Record<PadPlacementImageFile, ImageSourcePropType>
+> = {};
 
 const FULL_BODY_IMAGES: Record<BodyMapView, ImageSourcePropType> = {
   front: frontFullBodyImage as ImageSourcePropType,
@@ -77,7 +98,11 @@ type FlexibleBodyMapProps = {
 function normalizeRegionId(value: string | null | undefined): StableBodyRegionId | null {
   if (!value) return null;
 
-  const normalized = String(value).trim().toLowerCase().replace(/\s+/g, "_").replace(/-/g, "_");
+  const normalized = String(value)
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_")
+    .replace(/-/g, "_");
 
   const aliases: Record<string, StableBodyRegionId> = {
     head: "head",
@@ -159,6 +184,32 @@ export function resolveDetailImage(
   return REGION_DETAIL_IMAGES[requestedFile] ?? null;
 }
 
+/**
+ * LOCKED PAD-PLACEMENT IMAGE RESOLVER
+ *
+ * Placement images are reference images only.
+ * Chips are the precise selector.
+ * Returns null when a placement image is missing.
+ * Never guesses or substitutes another body area.
+ */
+export function resolvePadPlacementImage(
+  regionId: StableBodyRegionId | string | null,
+  view: BodyMapView
+): ImageSourcePropType | null {
+  const stableId = normalizeRegionId(regionId);
+  if (!stableId) return null;
+
+  const manifestEntry = BODY_MAP_MANIFEST[stableId];
+  const requestedFile =
+    view === "back"
+      ? manifestEntry.placementBackImageFile
+      : manifestEntry.placementFrontImageFile;
+
+  if (!requestedFile) return null;
+
+  return PAD_PLACEMENT_IMAGES[requestedFile] ?? null;
+}
+
 export function BodyMap(props: FlexibleBodyMapProps) {
   const selectedBodyArea =
     props.selectedBodyArea ?? props.selectedArea ?? props.value ?? null;
@@ -177,10 +228,37 @@ export function BodyMap(props: FlexibleBodyMapProps) {
     : null;
 
   const activeDetailImageKey = activeDetailRegionId
-    ? `${activeDetailRegionId}-${view}`
-    : "none";
+    ? `detail-${activeDetailRegionId}-${view}`
+    : "detail-none";
 
   const detailImageFailed = failedImageKeys[activeDetailImageKey] === true;
+
+  const selectedChipLabel =
+    activeDetailRegion && selectedBodyArea && activeDetailRegion.chips.includes(selectedBodyArea)
+      ? selectedBodyArea
+      : null;
+
+  const activePadPlacementRule: PadPlacementRule | null =
+    activeDetailRegionId && selectedChipLabel
+      ? getPadPlacementRule(activeDetailRegionId, selectedChipLabel)
+      : null;
+
+  const padPlacementView: BodyMapView =
+    activePadPlacementRule?.preferredView ?? view;
+
+  const activePadPlacementImage = activePadPlacementRule
+    ? resolvePadPlacementImage(
+        activePadPlacementRule.placementImageRegionId,
+        padPlacementView
+      )
+    : null;
+
+  const activePadPlacementImageKey = activePadPlacementRule
+    ? `placement-${activePadPlacementRule.id}-${padPlacementView}`
+    : "placement-none";
+
+  const padPlacementImageFailed =
+    failedImageKeys[activePadPlacementImageKey] === true;
 
   const visibleSelectedLabel =
     selectedBodyArea ||
@@ -292,6 +370,79 @@ export function BodyMap(props: FlexibleBodyMapProps) {
     );
   }
 
+  function renderPadPlacementCard() {
+    if (!activeDetailRegion) {
+      return null;
+    }
+
+    if (!selectedChipLabel || !activePadPlacementRule) {
+      return (
+        <View style={styles.placementCard}>
+          <Text style={styles.cardTitle}>Pad Placement Guide</Text>
+          <Text style={styles.bodyCopy}>
+            Select one of the close-up buttons above to show plain-language pad
+            placement guidance and the matching placement image when available.
+          </Text>
+        </View>
+      );
+    }
+
+    const shouldShowPlacementImage =
+      activePadPlacementImage && !padPlacementImageFailed;
+
+    return (
+      <View style={styles.placementCard}>
+        <Text style={styles.cardTitle}>Pad Placement Guide</Text>
+
+        <View style={styles.placementBadge}>
+          <Text style={styles.placementBadgeText}>{selectedChipLabel}</Text>
+        </View>
+
+        <Text style={styles.placementPlain}>
+          {activePadPlacementRule.plainLanguage}
+        </Text>
+
+        <Text style={styles.placementTechnical}>
+          {activePadPlacementRule.technicalArea}
+        </Text>
+
+        <Text style={styles.placementMeta}>
+          Pad count: {activePadPlacementRule.padCount}
+        </Text>
+
+        {activePadPlacementRule.optionalNotes?.map((note) => (
+          <Text key={note} style={styles.placementNote}>
+            {note}
+          </Text>
+        ))}
+
+        <View style={styles.placementImageWrap}>
+          {shouldShowPlacementImage ? (
+            <Image
+              source={activePadPlacementImage}
+              resizeMode="contain"
+              style={styles.placementImage}
+              onError={() => {
+                setFailedImageKeys((current) => ({
+                  ...current,
+                  [activePadPlacementImageKey]: true,
+                }));
+              }}
+            />
+          ) : (
+            <View style={styles.placementFallbackCard}>
+              <Text style={styles.fallbackTitle}>Pad placement image not added yet</Text>
+              <Text style={styles.fallbackText}>
+                Pad placement image not added yet for {selectedChipLabel}. Follow
+                the placement guidance text for now.
+              </Text>
+            </View>
+          )}
+        </View>
+      </View>
+    );
+  }
+
   function renderSidePanel() {
     const chips = activeDetailRegion?.chips ?? [];
 
@@ -345,6 +496,8 @@ export function BodyMap(props: FlexibleBodyMapProps) {
             </Text>
           </View>
         )}
+
+        {renderPadPlacementCard()}
       </View>
     );
   }
@@ -622,6 +775,81 @@ const styles = StyleSheet.create({
     lineHeight: 21,
     textAlign: "center",
   },
+  placementCard: {
+    backgroundColor: "#ffffff",
+    borderColor: lightBorder,
+    borderWidth: 1,
+    borderRadius: 18,
+    padding: 18,
+  },
+  placementBadge: {
+    alignSelf: "flex-start",
+    backgroundColor: "#f7e9a7",
+    borderColor: gold,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    marginBottom: 12,
+  },
+  placementBadgeText: {
+    color: navy,
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  placementPlain: {
+    color: navy,
+    fontSize: 14,
+    fontWeight: "800",
+    lineHeight: 21,
+    marginBottom: 8,
+  },
+  placementTechnical: {
+    color: softText,
+    fontSize: 13,
+    lineHeight: 20,
+    marginBottom: 8,
+  },
+  placementMeta: {
+    color: "#475569",
+    fontSize: 12,
+    fontWeight: "900",
+    marginBottom: 8,
+    textTransform: "uppercase",
+  },
+  placementNote: {
+    color: "#7c2d12",
+    backgroundColor: "#fff7ed",
+    borderColor: "#fed7aa",
+    borderWidth: 1,
+    borderRadius: 12,
+    fontSize: 12,
+    lineHeight: 18,
+    marginBottom: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  placementImageWrap: {
+    backgroundColor: "#f8fafc",
+    borderColor: lightBorder,
+    borderWidth: 1,
+    borderRadius: 16,
+    minHeight: 180,
+    marginTop: 12,
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  placementImage: {
+    width: "100%",
+    height: 220,
+  },
+  placementFallbackCard: {
+    padding: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });
 
 export default BodyMap;
+

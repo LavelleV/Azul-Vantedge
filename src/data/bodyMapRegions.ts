@@ -27,21 +27,36 @@ export type RegionImageFile =
   | "hip-front.png"
   | "hip-glute-back.png"
   | "thigh-front.png"
-  | "thigh-back.png"
   | "knee-front.png"
-  | "knee-back.png"
   | "lower-leg-front.png"
-  | "lower-leg-back.png"
-  | "foot-ankle-front.png"
-  | "foot-ankle-back.png"
-  | "upper-back-rib.png";
+  | "foot-ankle-front.png";
+
+export type PadPlacementImageFile =
+  | "head-face-front-placement.png"
+  | "neck-front-placement.png"
+  | "neck-back-placement.png"
+  | "shoulder-front-placement.png"
+  | "shoulder-back-placement.png"
+  | "arm-front-placement.png"
+  | "chest-front-placement.png"
+  | "abdomen-front-placement.png"
+  | "low-back-back-placement.png"
+  | "hip-front-placement.png"
+  | "hip-glute-back-placement.png"
+  | "thigh-front-placement.png"
+  | "knee-front-placement.png"
+  | "lower-leg-front-placement.png"
+  | "foot-ankle-front-placement.png";
 
 export type BodyMapManifestRegion = {
   id: StableBodyRegionId;
   label: string;
   frontImageFile: RegionImageFile | null;
   backImageFile: RegionImageFile | null;
+  placementFrontImageFile: PadPlacementImageFile | null;
+  placementBackImageFile: PadPlacementImageFile | null;
   chips: string[];
+  detailSupported: boolean;
 };
 
 export type BodyMapRect = {
@@ -64,8 +79,10 @@ export type FullBodyHotspot = {
  *
  * Full-body click -> stable region id -> approved detail image -> chips.
  *
+ * This is the locked body-image contract.
+ * Stable IDs must remain consistent.
  * Do not substitute unrelated body images.
- * If an approved image is missing, BodyMap must show a fallback card, not a blank panel.
+ * Missing images must show fallback, not blank.
  * Detail images are reference images only; chips are the precise selector.
  */
 export const BODY_MAP_MANIFEST: Record<StableBodyRegionId, BodyMapManifestRegion> = {
@@ -74,20 +91,28 @@ export const BODY_MAP_MANIFEST: Record<StableBodyRegionId, BodyMapManifestRegion
     label: "Head / Face / Jaw",
     frontImageFile: "head-face-front.png",
     backImageFile: null,
+    placementFrontImageFile: "head-face-front-placement.png",
+    placementBackImageFile: null,
     chips: ["Forehead", "Temple", "Jaw / TMJ", "Cheek", "Sinus", "Ear Area"],
+    detailSupported: true,
   },
   neck: {
     id: "neck",
     label: "Neck",
     frontImageFile: "neck-front.png",
-    backImageFile: null,
+    backImageFile: "neck-back.png",
+    placementFrontImageFile: "neck-front-placement.png",
+    placementBackImageFile: "neck-back-placement.png",
     chips: ["Front Neck", "Side Neck", "Base of Skull", "Upper Trap", "Cervical Spine"],
+    detailSupported: true,
   },
   shoulder: {
     id: "shoulder",
     label: "Shoulder",
     frontImageFile: "shoulder-front.png",
-    backImageFile: null,
+    backImageFile: "shoulder-back.png",
+    placementFrontImageFile: "shoulder-front-placement.png",
+    placementBackImageFile: "shoulder-back-placement.png",
     chips: [
       "Front Shoulder / Coracoid Area",
       "Top Shoulder / AC Joint",
@@ -96,26 +121,35 @@ export const BODY_MAP_MANIFEST: Record<StableBodyRegionId, BodyMapManifestRegion
       "Shoulder Blade / Scapula",
       "Upper Trap",
     ],
+    detailSupported: true,
   },
   arm: {
     id: "arm",
     label: "Arm / Hand",
     frontImageFile: "arm-front.png",
     backImageFile: "arm-front.png",
+    placementFrontImageFile: "arm-front-placement.png",
+    placementBackImageFile: "arm-front-placement.png",
     chips: ["Upper Arm", "Elbow", "Forearm", "Wrist / Hand"],
+    detailSupported: true,
   },
   chest: {
     id: "chest",
     label: "Chest / Ribs",
     frontImageFile: "chest-front.png",
     backImageFile: null,
+    placementFrontImageFile: "chest-front-placement.png",
+    placementBackImageFile: null,
     chips: ["Sternum", "Pectoral Area", "Upper Rib", "Side Rib", "Intercostal Area"],
+    detailSupported: true,
   },
   abdomen: {
     id: "abdomen",
     label: "Abdomen / Gut",
     frontImageFile: "abdomen-front.png",
     backImageFile: null,
+    placementFrontImageFile: "abdomen-front-placement.png",
+    placementBackImageFile: null,
     chips: [
       "Upper Abdomen",
       "Lower Abdomen",
@@ -123,19 +157,25 @@ export const BODY_MAP_MANIFEST: Record<StableBodyRegionId, BodyMapManifestRegion
       "Right Abdomen",
       "Center Abdomen / Gut",
     ],
+    detailSupported: true,
   },
   low_back: {
     id: "low_back",
     label: "Low Back / SI",
     frontImageFile: null,
     backImageFile: "low-back-back.png",
+    placementFrontImageFile: null,
+    placementBackImageFile: "low-back-back-placement.png",
     chips: ["Lumbar Center", "Left Low Back", "Right Low Back", "Sacrum", "SI Joint"],
+    detailSupported: true,
   },
   hip_glute: {
     id: "hip_glute",
     label: "Hip / Glute / Pelvis",
     frontImageFile: "hip-front.png",
     backImageFile: "hip-glute-back.png",
+    placementFrontImageFile: "hip-front-placement.png",
+    placementBackImageFile: "hip-glute-back-placement.png",
     chips: [
       "Glute",
       "Piriformis / Deep Glute",
@@ -144,12 +184,15 @@ export const BODY_MAP_MANIFEST: Record<StableBodyRegionId, BodyMapManifestRegion
       "Front Hip / Hip Flexor",
       "Upper Hamstring Origin",
     ],
+    detailSupported: true,
   },
   thigh: {
     id: "thigh",
     label: "Thigh",
     frontImageFile: "thigh-front.png",
     backImageFile: "thigh-front.png",
+    placementFrontImageFile: "thigh-front-placement.png",
+    placementBackImageFile: "thigh-front-placement.png",
     chips: [
       "Quad",
       "Inner Thigh / Adductor",
@@ -157,12 +200,15 @@ export const BODY_MAP_MANIFEST: Record<StableBodyRegionId, BodyMapManifestRegion
       "Hamstring",
       "Upper Thigh",
     ],
+    detailSupported: true,
   },
   knee: {
     id: "knee",
     label: "Knee",
     frontImageFile: "knee-front.png",
     backImageFile: "knee-front.png",
+    placementFrontImageFile: "knee-front-placement.png",
+    placementBackImageFile: "knee-front-placement.png",
     chips: [
       "Kneecap / Patella",
       "Inner Knee",
@@ -171,20 +217,27 @@ export const BODY_MAP_MANIFEST: Record<StableBodyRegionId, BodyMapManifestRegion
       "Patellar Tendon",
       "Quad Tendon",
     ],
+    detailSupported: true,
   },
   lower_leg: {
     id: "lower_leg",
     label: "Lower Leg",
     frontImageFile: "lower-leg-front.png",
     backImageFile: "lower-leg-front.png",
+    placementFrontImageFile: "lower-leg-front-placement.png",
+    placementBackImageFile: "lower-leg-front-placement.png",
     chips: ["Shin", "Calf", "Outer Lower Leg", "Achilles Area"],
+    detailSupported: true,
   },
   foot_ankle: {
     id: "foot_ankle",
     label: "Foot / Ankle",
     frontImageFile: "foot-ankle-front.png",
     backImageFile: "foot-ankle-front.png",
+    placementFrontImageFile: "foot-ankle-front-placement.png",
+    placementBackImageFile: "foot-ankle-front-placement.png",
     chips: ["Heel", "Arch", "Ball of Foot", "Toes", "Inner Ankle", "Outer Ankle", "Achilles"],
+    detailSupported: true,
   },
 };
 

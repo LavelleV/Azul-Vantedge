@@ -1,3 +1,10 @@
+import {
+  HOME_DEVICE_NAME,
+  HOME_PROTOCOL_DISCLAIMER,
+  getHomeProtocolByLine,
+  type HomeProgramProtocol,
+} from './homeProgramProtocols';
+
 export type ProtocolPlanContext = {
   question?: string;
   userQuestion?: string;
@@ -16,6 +23,8 @@ type KnownProtocol = {
   code: string;
   name: string;
   time?: string;
+  deviceType?: 'home' | 'pro';
+  category?: string;
 };
 
 type ProtocolPurpose =
@@ -56,34 +65,50 @@ type ProtocolSet = Record<ProtocolPurpose, KnownProtocol>;
  * Home and PRO line numbers are different.
  * Do not treat protocol numbers as universal across device models.
  */
+function homeProtocol(line: number): KnownProtocol {
+  const protocol = getHomeProtocolByLine(line) as HomeProgramProtocol | undefined;
+  if (!protocol) {
+    throw new Error(`Missing ${HOME_DEVICE_NAME} protocol line ${line}`);
+  }
+
+  return {
+    number: protocol.line,
+    code: protocol.code,
+    name: protocol.name,
+    time: protocol.time,
+    deviceType: protocol.deviceType,
+    category: protocol.category,
+  };
+}
+
 const HOME_PROTOCOLS: ProtocolSet = {
-  fascia: { number: 21, code: "Inj5", name: 'Fascia "Heal"', time: "35m x 4" },
-  muscle: { number: 20, code: "Inj4", name: "Musc Strain/Inj", time: "44m" },
-  jointGeneralPain: { number: 23, code: "Inj7", name: "Quick Jnt/Gen Pn", time: "15m" },
-  painNerve: { number: 24, code: "Inj8", name: "Quick Pn/Nrv", time: "15m" },
-  jointSwelling: { number: 19, code: "Inj3", name: "Joint Swell", time: "50m" },
-  siFacet: { number: 16, code: "Pn16", name: "SI & Facet Pn", time: "34m" },
-  tendon: { number: 26, code: "Inj10", name: "Tendon Injury", time: "27m" },
-  sprainJoint: { number: 18, code: "Inj2", name: "Sprains & Jnt", time: "41m" },
-  cartilageMeniscus: { number: 25, code: "Inj9", name: "Cartilage/Meniscus", time: "30m" },
-  calmRest: { number: 50, code: "Str6", name: "Calm/Rest", time: "23m" },
-  stressNerveReset: { number: 46, code: "Str2", name: "Stress & Nrv Reset", time: "50m" },
-  anxiety: { number: 47, code: "Str3", name: "Anx", time: "32m" },
-  attentionFocus: { number: 45, code: "Str1", name: "Attn/Focus", time: "38m" },
-  nervousSystemReset: { number: 58, code: "PO3", name: "Nerv Sys Reset", time: "50m" },
-  lymphSwell: { number: 60, code: "PO5", name: "Lymph & Swell", time: "38m" },
-  generalInflammation: { number: 70, code: "Well7", name: "Gen Inflam", time: "43m" },
-  systemicInflammation: { number: 84, code: "I8", name: "Inf Full Bod", time: "1hr, 4m" },
-  neckPain: { number: 7, code: "Pn7", name: "Neck Pain", time: "50m" },
-  spineAlign: { number: 15, code: "Pn15", name: "Spine Align", time: "42m" },
-  bonePain: { number: 30, code: "Inj14", name: "Bone Pain", time: "25m" },
-  boneBruise: { number: 29, code: "Inj13", name: "Bone Bruise", time: "32m" },
-  bruise: { number: 22, code: "Inj6", name: "Bruise", time: "15m" },
-  skinWound: { number: 33, code: "Inj17", name: "Skin Wound Hl", time: "37m" },
-  skinSun: { number: 34, code: "Inj18", name: "Skin Sun", time: "20m" },
-  stiffJoint: { number: 38, code: "A4", name: "Jnt Stiffness", time: "22m" },
-  stiffMuscleTissue: { number: 42, code: "A8", name: "Stiff Musc/Tiss", time: "1hr" },
-  circulationVascular: { number: 85, code: "I9", name: "Skin Cellulite Pn", time: "16m" },
+  fascia: homeProtocol(21),
+  muscle: homeProtocol(20),
+  jointGeneralPain: homeProtocol(23),
+  painNerve: homeProtocol(24),
+  jointSwelling: homeProtocol(19),
+  siFacet: homeProtocol(16),
+  tendon: homeProtocol(26),
+  sprainJoint: homeProtocol(18),
+  cartilageMeniscus: homeProtocol(25),
+  calmRest: homeProtocol(50),
+  stressNerveReset: homeProtocol(46),
+  anxiety: homeProtocol(47),
+  attentionFocus: homeProtocol(45),
+  nervousSystemReset: homeProtocol(58),
+  lymphSwell: homeProtocol(60),
+  generalInflammation: homeProtocol(70),
+  systemicInflammation: homeProtocol(84),
+  neckPain: homeProtocol(7),
+  spineAlign: homeProtocol(15),
+  bonePain: homeProtocol(30),
+  boneBruise: homeProtocol(29),
+  bruise: homeProtocol(22),
+  skinWound: homeProtocol(33),
+  skinSun: homeProtocol(34),
+  stiffJoint: homeProtocol(38),
+  stiffMuscleTissue: homeProtocol(42),
+  circulationVascular: homeProtocol(85),
 };
 
 const PRO_PROTOCOLS: ProtocolSet = {
@@ -145,7 +170,7 @@ function getProgramKey(context: ProtocolPlanContext): ProgramKey {
     context.activeDeviceModel || context.deviceModel || context.activeDevice
   );
 
-  if (deviceText.includes("pro")) {
+  if (deviceText.includes("pro") || deviceText.includes("professional") || deviceText.includes("clinical")) {
     return "pro";
   }
 
@@ -157,7 +182,21 @@ function getProtocols(context: ProtocolPlanContext): ProtocolSet {
 }
 
 function protocolLabel(protocol: KnownProtocol): string {
-  return `#${protocol.number} ${protocol.code} ${protocol.name}`;
+  const base = `#${protocol.number} ${protocol.code} ${protocol.name}`;
+  const meta = [protocol.time, protocol.category].filter(Boolean).join(' • ');
+  return meta ? `${base} (${meta})` : base;
+}
+
+function decorateHomePlan(context: ProtocolPlanContext, lines: string[]): string[] {
+  if (getProgramKey(context) !== 'home') {
+    return lines;
+  }
+
+  return [
+    `Home Device Program: ${HOME_DEVICE_NAME}`,
+    ...lines,
+    `Disclaimer: ${HOME_PROTOCOL_DISCLAIMER}`,
+  ];
 }
 
 function isSwellingPattern(patternText: string): boolean {
@@ -454,68 +493,43 @@ function buildDefaultAreaPlan(context: ProtocolPlanContext): string[] {
 export function buildNumberedProtocolPlan(context: ProtocolPlanContext): string[] {
   const area = normalize(getArea(context));
   const patternText = getPatternText(context);
+  let plan: string[];
 
   if (includesAny(area, ["hip", "glute", "pelvis", "piriformis", "si joint"])) {
-    return buildHipGlutePlan(context);
+    plan = buildHipGlutePlan(context);
+  } else if (includesAny(area, ["low back", "lumbar", "sacrum", "sacroiliac"])) {
+    plan = buildLowBackPlan(context);
+  } else if (includesAny(area, ["shoulder", "rotator", "scapula", "upper trap"])) {
+    plan = buildShoulderPlan(context);
+  } else if (includesAny(area, ["wrist", "hand", "forearm", "elbow", "arm"])) {
+    plan = buildWristHandPlan(context);
+  } else if (includesAny(area, ["knee", "patella", "kneecap"])) {
+    plan = buildKneePlan(context);
+  } else if (includesAny(area, ["lower leg", "calf", "shin", "achilles"])) {
+    plan = buildLowerLegPlan(context);
+  } else if (includesAny(area, ["foot", "ankle", "heel", "arch", "toes"])) {
+    plan = buildFootAnklePlan(context);
+  } else if (includesAny(area, ["neck", "cervical", "base of skull"])) {
+    plan = buildNeckPlan(context);
+  } else if (includesAny(area, ["chest", "rib", "sternum", "intercostal", "pectoral"])) {
+    plan = buildChestPlan(context);
+  } else if (includesAny(area, ["abdomen", "gut", "stomach"])) {
+    plan = buildAbdomenPlan(context);
+  } else if (includesAny(area, ["thigh", "quad", "hamstring", "adductor", "it band"])) {
+    plan = buildThighPlan(context);
+  } else if (includesAny(area, ["head", "face", "jaw", "tmj", "temple", "sinus", "ear"])) {
+    plan = buildHeadPlan(context);
+  } else if (includesAny(area, ["full body", "systemic", "whole body"]) || includesAny(patternText, ["full body", "systemic", "whole body"])) {
+    plan = buildSystemicPlan(context);
+  } else if (includesAny(patternText, ["anxiety", "anxious", "panic", "stress", "overwhelmed", "racing thoughts"])) {
+    plan = buildAnxietyPlan(context);
+  } else if (includesAny(patternText, ["focus", "brain fog", "motivation", "memory", "brain health"])) {
+    plan = buildFocusBrainPlan(context);
+  } else {
+    plan = buildDefaultAreaPlan(context);
   }
 
-  if (includesAny(area, ["low back", "lumbar", "sacrum", "sacroiliac"])) {
-    return buildLowBackPlan(context);
-  }
-
-  if (includesAny(area, ["shoulder", "rotator", "scapula", "upper trap"])) {
-    return buildShoulderPlan(context);
-  }
-
-  if (includesAny(area, ["wrist", "hand", "forearm", "elbow", "arm"])) {
-    return buildWristHandPlan(context);
-  }
-
-  if (includesAny(area, ["knee", "patella", "kneecap"])) {
-    return buildKneePlan(context);
-  }
-
-  if (includesAny(area, ["lower leg", "calf", "shin", "achilles"])) {
-    return buildLowerLegPlan(context);
-  }
-
-  if (includesAny(area, ["foot", "ankle", "heel", "arch", "toes"])) {
-    return buildFootAnklePlan(context);
-  }
-
-  if (includesAny(area, ["neck", "cervical", "base of skull"])) {
-    return buildNeckPlan(context);
-  }
-
-  if (includesAny(area, ["chest", "rib", "sternum", "intercostal", "pectoral"])) {
-    return buildChestPlan(context);
-  }
-
-  if (includesAny(area, ["abdomen", "gut", "stomach"])) {
-    return buildAbdomenPlan(context);
-  }
-
-  if (includesAny(area, ["thigh", "quad", "hamstring", "adductor", "it band"])) {
-    return buildThighPlan(context);
-  }
-
-  if (includesAny(area, ["head", "face", "jaw", "tmj", "temple", "sinus", "ear"])) {
-    return buildHeadPlan(context);
-  }
-
-  if (includesAny(area, ["full body", "systemic", "whole body"]) || includesAny(patternText, ["full body", "systemic", "whole body"])) {
-    return buildSystemicPlan(context);
-  }
-
-  if (includesAny(patternText, ["anxiety", "anxious", "panic", "stress", "overwhelmed", "racing thoughts"])) {
-    return buildAnxietyPlan(context);
-  }
-
-  if (includesAny(patternText, ["focus", "brain fog", "motivation", "memory", "brain health"])) {
-    return buildFocusBrainPlan(context);
-  }
-
-  return buildDefaultAreaPlan(context);
+  return decorateHomePlan(context, plan);
 }
 
 function sectionHasProtocolNumber(section: string[]): boolean {
@@ -529,7 +543,7 @@ export function ensureNumberedProtocolArray(
   const safeExistingPlan = Array.isArray(existingPlan) ? existingPlan : [];
 
   if (sectionHasProtocolNumber(safeExistingPlan)) {
-    return safeExistingPlan;
+    return decorateHomePlan(context, safeExistingPlan);
   }
 
   return buildNumberedProtocolPlan(context);
