@@ -25,6 +25,13 @@ import neckFrontImage from "../../assets/body-map/regions/neck-front.png";
 import shoulderFrontImage from "../../assets/body-map/regions/shoulder-front.png";
 import thighFrontImage from "../../assets/body-map/regions/thigh-front.png";
 
+import armFrontPlacementImage from "../../assets/body-map/pad-placement/arm-front-placement.png";
+import footAnkleFrontPlacementImage from "../../assets/body-map/pad-placement/foot-ankle-front-placement.png";
+import hipGluteBackPlacementImage from "../../assets/body-map/pad-placement/hip-glute-back-placement.png";
+import kneeFrontPlacementImage from "../../assets/body-map/pad-placement/knee-front-placement.png";
+import lowBackBackPlacementImage from "../../assets/body-map/pad-placement/low-back-back-placement.png";
+import shoulderFrontPlacementImage from "../../assets/body-map/pad-placement/shoulder-front-placement.png";
+
 import {
   BODY_MAP_MANIFEST,
   BodyMapView,
@@ -33,6 +40,9 @@ import {
   RegionImageFile,
   StableBodyRegionId,
 } from "../data/bodyMapRegions";
+
+import { getPadPlacementVisual } from "../data/padPlacementVisuals";
+import PadPlacementVisualPanel from "./PadPlacementVisualPanel";
 
 import {
   getPadPlacementRule,
@@ -67,16 +77,47 @@ const REGION_DETAIL_IMAGES: Partial<Record<RegionImageFile, ImageSourcePropType>
 /**
  * LOCKED PAD-PLACEMENT IMAGE SOURCE MAP
  *
- * Add explicit static imports here only after the matching files physically exist
- * in assets/body-map/pad-placement.
- *
+ * Static generated PNGs remain supported.
+ * Dynamic overlay visuals take priority when available.
  * Do not use dynamic require strings.
  * Do not substitute unrelated placement images.
  * Missing placement images must show fallback, not blank.
  */
 const PAD_PLACEMENT_IMAGES: Partial<
   Record<PadPlacementImageFile, ImageSourcePropType>
-> = {};
+> = {
+  "arm-front-placement.png": armFrontPlacementImage as ImageSourcePropType,
+  "foot-ankle-front-placement.png":
+    footAnkleFrontPlacementImage as ImageSourcePropType,
+  "hip-glute-back-placement.png":
+    hipGluteBackPlacementImage as ImageSourcePropType,
+  "knee-front-placement.png": kneeFrontPlacementImage as ImageSourcePropType,
+  "low-back-back-placement.png":
+    lowBackBackPlacementImage as ImageSourcePropType,
+  "shoulder-front-placement.png":
+    shoulderFrontPlacementImage as ImageSourcePropType,
+};
+
+/**
+ * Base images used by dynamic pad overlays.
+ *
+ * These are clean anatomy images. The pads are drawn programmatically
+ * from src/data/padPlacementVisuals.ts, so the visual can match the
+ * actual placement rule without rewriting the wording.
+ */
+const PAD_OVERLAY_BASE_IMAGES: Record<string, ImageSourcePropType> = {
+  "shoulder-front": shoulderFrontImage as ImageSourcePropType,
+  "low-back-back": lowBackBackImage as ImageSourcePropType,
+  "hip-glute-back": hipGluteBackImage as ImageSourcePropType,
+  "hip-front": hipFrontImage as ImageSourcePropType,
+  "knee-front": kneeFrontImage as ImageSourcePropType,
+  "foot-ankle-front": footAnkleFrontImage as ImageSourcePropType,
+  "arm-front": armFrontImage as ImageSourcePropType,
+};
+
+function resolveOverlayBaseImage(imageKey: string): ImageSourcePropType | null {
+  return PAD_OVERLAY_BASE_IMAGES[imageKey] ?? null;
+}
 
 const FULL_BODY_IMAGES: Record<BodyMapView, ImageSourcePropType> = {
   front: frontFullBodyImage as ImageSourcePropType,
@@ -243,6 +284,11 @@ export function BodyMap(props: FlexibleBodyMapProps) {
       ? getPadPlacementRule(activeDetailRegionId, selectedChipLabel)
       : null;
 
+  const activePadPlacementVisual =
+    activeDetailRegionId && selectedChipLabel
+      ? getPadPlacementVisual(activeDetailRegionId, selectedChipLabel)
+      : null;
+
   const padPlacementView: BodyMapView =
     activePadPlacementRule?.preferredView ?? view;
 
@@ -370,6 +416,46 @@ export function BodyMap(props: FlexibleBodyMapProps) {
     );
   }
 
+  function renderPadPlacementVisualArea() {
+    const shouldShowPlacementImage =
+      activePadPlacementImage && !padPlacementImageFailed;
+
+    if (activePadPlacementVisual) {
+      return (
+        <PadPlacementVisualPanel
+          visual={activePadPlacementVisual}
+          resolveOverlayImage={resolveOverlayBaseImage}
+        />
+      );
+    }
+
+    return (
+      <View style={styles.placementImageWrap}>
+        {shouldShowPlacementImage ? (
+          <Image
+            source={activePadPlacementImage}
+            resizeMode="contain"
+            style={styles.placementImage}
+            onError={() => {
+              setFailedImageKeys((current) => ({
+                ...current,
+                [activePadPlacementImageKey]: true,
+              }));
+            }}
+          />
+        ) : (
+          <View style={styles.placementFallbackCard}>
+            <Text style={styles.fallbackTitle}>Pad placement image not added yet</Text>
+            <Text style={styles.fallbackText}>
+              Pad placement image not added yet for {selectedChipLabel}. Follow
+              the placement guidance text for now.
+            </Text>
+          </View>
+        )}
+      </View>
+    );
+  }
+
   function renderPadPlacementCard() {
     if (!activeDetailRegion) {
       return null;
@@ -386,9 +472,6 @@ export function BodyMap(props: FlexibleBodyMapProps) {
         </View>
       );
     }
-
-    const shouldShowPlacementImage =
-      activePadPlacementImage && !padPlacementImageFailed;
 
     return (
       <View style={styles.placementCard}>
@@ -416,29 +499,7 @@ export function BodyMap(props: FlexibleBodyMapProps) {
           </Text>
         ))}
 
-        <View style={styles.placementImageWrap}>
-          {shouldShowPlacementImage ? (
-            <Image
-              source={activePadPlacementImage}
-              resizeMode="contain"
-              style={styles.placementImage}
-              onError={() => {
-                setFailedImageKeys((current) => ({
-                  ...current,
-                  [activePadPlacementImageKey]: true,
-                }));
-              }}
-            />
-          ) : (
-            <View style={styles.placementFallbackCard}>
-              <Text style={styles.fallbackTitle}>Pad placement image not added yet</Text>
-              <Text style={styles.fallbackText}>
-                Pad placement image not added yet for {selectedChipLabel}. Follow
-                the placement guidance text for now.
-              </Text>
-            </View>
-          )}
-        </View>
+        {renderPadPlacementVisualArea()}
       </View>
     );
   }
@@ -852,4 +913,3 @@ const styles = StyleSheet.create({
 });
 
 export default BodyMap;
-
