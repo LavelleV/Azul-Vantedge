@@ -2,6 +2,7 @@ import { containsRedFlag } from '../data/safetyRules';
 import type { DeviceModel } from '../data/deviceModels';
 import { buildNumberedProtocolPlan } from './protocolPlanRules';
 import { buildPlainLanguagePadPlacement } from './padPlacementRules';
+import { alignAzulResponseLanguageToMatchedStrategy } from './azulResponseLanguageRules';
 export type UserMode = 'client' | 'practitioner';
 
 export type VibeJournalData = {
@@ -143,7 +144,7 @@ function finalizeResponse(
   const protocolArea = inferProtocolArea(input, context);
   const selectedAreaForRules = protocolArea || input.selectedBodyArea;
 
-  return {
+  const responseWithProtocolPlan: AzulAgentResponse = {
     ...response,
     bestStartingProtocol: buildNumberedProtocolPlan({
       userQuestion: input.userQuestion,
@@ -155,7 +156,16 @@ function finalizeResponse(
       selectedBodyArea: selectedAreaForRules,
     }),
   };
+
+  return alignAzulResponseLanguageToMatchedStrategy({
+    input: {
+      ...input,
+      selectedBodyArea: selectedAreaForRules,
+    },
+    response: responseWithProtocolPlan,
+  });
 }
+
 
 function withMassageIntegration(response: AzulAgentResponse, items: string[]) {
   return {
