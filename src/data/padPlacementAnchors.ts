@@ -2,19 +2,29 @@ import type { BodyMapView, StableBodyRegionId } from "./bodyMapRegions";
 
 export type OverlayBaseImageKey =
   | "shoulder-front"
+  | "shoulder-back"
+  | "posterior-shoulder-back"
+  | "scapula-back"
   | "low-back-back"
   | "hip-glute-back"
   | "hip-front"
   | "knee-front"
   | "foot-ankle-front"
-  | "arm-front";
+  | "foot-bottom-plantar"
+  | "arm-front"
+  | "head-face-front"
+  | "head-neck-back"
+  | "head-side-jaw-tmj"
+  | "sinus-face-front";
+
+export type PadPlacementOverlayView = BodyMapView | "side" | "bottom";
 
 export type PadPlacementAnchor = {
   id: string;
   label: string;
   technicalAnchor: string;
   regionId: StableBodyRegionId;
-  view: BodyMapView | "side";
+  view: PadPlacementOverlayView;
   imageKey: OverlayBaseImageKey;
   x: number;
   y: number;
@@ -23,90 +33,211 @@ export type PadPlacementAnchor = {
 /**
  * REUSABLE TECHNICAL PAD ANCHOR LIBRARY
  *
- * Define each anatomical anchor once.
- * Visual rules should reference these anchor IDs instead of repeating raw x/y.
+ * This is the technical placement source for pad visuals.
+ * Define each anatomical anchor once, then reuse it across many rules.
  *
- * If a pad looks visually off, adjust the anchor here once and all rules
- * using it improve automatically.
+ * The plain-language text explains the placement.
+ * The technical anchor controls where the pad appears visually.
+ *
+ * If a placement is visually wrong, tune the anchor here once,
+ * not inside every individual rule.
  */
 export const PAD_PLACEMENT_ANCHORS: Record<string, PadPlacementAnchor> = {
-  // =========================
-  // SHOULDER
-  // =========================
+  // HEAD / FACE / JAW / NECK
+  frontal_region_forehead: {
+    id: "frontal_region_forehead",
+    label: "Forehead",
+    technicalAnchor: "Frontal region / forehead above eyebrows",
+    regionId: "head",
+    view: "front",
+    imageKey: "head-face-front",
+    x: 50,
+    y: 26,
+  },
+  above_eyebrow_midline: {
+    id: "above_eyebrow_midline",
+    label: "Above Eyebrows",
+    technicalAnchor: "Frontal region above eyebrows",
+    regionId: "head",
+    view: "front",
+    imageKey: "head-face-front",
+    x: 50,
+    y: 38,
+  },
+  suboccipital_upper_cervical: {
+    id: "suboccipital_upper_cervical",
+    label: "Suboccipital",
+    technicalAnchor: "Suboccipital / upper cervical region",
+    regionId: "head",
+    view: "back",
+    imageKey: "head-neck-back",
+    x: 50,
+    y: 39,
+  },
+  upper_cervical_midline: {
+    id: "upper_cervical_midline",
+    label: "Upper Cervical",
+    technicalAnchor: "Upper cervical region",
+    regionId: "neck",
+    view: "back",
+    imageKey: "head-neck-back",
+    x: 50,
+    y: 52,
+  },
+  temple_temporalis: {
+    id: "temple_temporalis",
+    label: "Temple",
+    technicalAnchor: "Temporalis / temple region",
+    regionId: "head",
+    view: "side",
+    imageKey: "head-side-jaw-tmj",
+    x: 45,
+    y: 30,
+  },
+  tmj_masseter: {
+    id: "tmj_masseter",
+    label: "TMJ / Masseter",
+    technicalAnchor: "TMJ / masseter region",
+    regionId: "head",
+    view: "side",
+    imageKey: "head-side-jaw-tmj",
+    x: 49,
+    y: 52,
+  },
+  ear_area_support: {
+    id: "ear_area_support",
+    label: "Ear Area",
+    technicalAnchor: "Preauricular / ear-area support region",
+    regionId: "head",
+    view: "side",
+    imageKey: "head-side-jaw-tmj",
+    x: 62,
+    y: 38,
+  },
+  frontal_sinus_area: {
+    id: "frontal_sinus_area",
+    label: "Frontal Sinus",
+    technicalAnchor: "Frontal sinus region",
+    regionId: "head",
+    view: "front",
+    imageKey: "sinus-face-front",
+    x: 50,
+    y: 30,
+  },
+  maxillary_sinus_cheek: {
+    id: "maxillary_sinus_cheek",
+    label: "Maxillary Sinus",
+    technicalAnchor: "Maxillary sinus / cheek region",
+    regionId: "head",
+    view: "front",
+    imageKey: "sinus-face-front",
+    x: 50,
+    y: 49,
+  },
+
+  // SHOULDER / SCAPULA / ROTATOR CUFF
   anterior_shoulder_coracoid: {
     id: "anterior_shoulder_coracoid",
-    label: "Anterior Shoulder / Coracoid",
+    label: "Anterior Shoulder",
     technicalAnchor: "Anterior shoulder / Coracoid Process region",
     regionId: "shoulder",
     view: "front",
     imageKey: "shoulder-front",
-    x: 39,
-    y: 34,
+    x: 38,
+    y: 39,
   },
-  ac_joint_top: {
-    id: "ac_joint_top",
+  ac_joint_superior_shoulder: {
+    id: "ac_joint_superior_shoulder",
     label: "AC Joint",
-    technicalAnchor: "Acromioclavicular / AC Joint region",
+    technicalAnchor: "AC Joint / superior shoulder region",
     regionId: "shoulder",
     view: "front",
     imageKey: "shoulder-front",
-    x: 47,
-    y: 23,
+    x: 42,
+    y: 28,
   },
-  lateral_shoulder_support: {
-    id: "lateral_shoulder_support",
-    label: "Lateral Shoulder",
-    technicalAnchor: "Lateral shoulder / Deltoid support region",
-    regionId: "shoulder",
-    view: "front",
-    imageKey: "shoulder-front",
-    x: 29,
-    y: 36,
-  },
-  posterior_rotator_cuff: {
-    id: "posterior_rotator_cuff",
-    label: "Posterior Rotator Cuff",
-    technicalAnchor: "Posterior rotator cuff / Infraspinatus-Teres region",
-    regionId: "shoulder",
-    view: "front",
-    imageKey: "shoulder-front",
-    x: 31,
-    y: 41,
-  },
-  rear_shoulder_posterior: {
-    id: "rear_shoulder_posterior",
-    label: "Rear Shoulder",
-    technicalAnchor: "Posterior shoulder region",
-    regionId: "shoulder",
-    view: "front",
-    imageKey: "shoulder-front",
-    x: 34,
-    y: 38,
-  },
-  scapula_medial: {
-    id: "scapula_medial",
-    label: "Scapula",
-    technicalAnchor: "Shoulder Blade / Scapular region",
-    regionId: "shoulder",
-    view: "front",
-    imageKey: "shoulder-front",
-    x: 57,
-    y: 41,
-  },
-  upper_trapezius: {
-    id: "upper_trapezius",
+  upper_trapezius_back: {
+    id: "upper_trapezius_back",
     label: "Upper Trap",
     technicalAnchor: "Upper trapezius region",
     regionId: "shoulder",
-    view: "front",
-    imageKey: "shoulder-front",
-    x: 71,
-    y: 17,
+    view: "back",
+    imageKey: "shoulder-back",
+    x: 54,
+    y: 28,
+  },
+  levator_scapulae_superior_scapula: {
+    id: "levator_scapulae_superior_scapula",
+    label: "Levator / Superior Scapula",
+    technicalAnchor: "Levator scapulae / superior scapular region",
+    regionId: "shoulder",
+    view: "back",
+    imageKey: "shoulder-back",
+    x: 45,
+    y: 40,
+  },
+  posterior_rotator_cuff_back: {
+    id: "posterior_rotator_cuff_back",
+    label: "Posterior Rotator Cuff",
+    technicalAnchor: "Posterior rotator cuff / Infraspinatus-Teres region",
+    regionId: "shoulder",
+    view: "back",
+    imageKey: "posterior-shoulder-back",
+    x: 49,
+    y: 43,
+  },
+  posterior_deltoid_back: {
+    id: "posterior_deltoid_back",
+    label: "Posterior Deltoid",
+    technicalAnchor: "Posterior deltoid region",
+    regionId: "shoulder",
+    view: "back",
+    imageKey: "posterior-shoulder-back",
+    x: 66,
+    y: 47,
+  },
+  lateral_shoulder_back_support: {
+    id: "lateral_shoulder_back_support",
+    label: "Lateral Shoulder",
+    technicalAnchor: "Lateral / posterior shoulder support region",
+    regionId: "shoulder",
+    view: "back",
+    imageKey: "posterior-shoulder-back",
+    x: 69,
+    y: 42,
+  },
+  scapular_medial_border: {
+    id: "scapular_medial_border",
+    label: "Scapular Border",
+    technicalAnchor: "Medial scapular border / rhomboid region",
+    regionId: "shoulder",
+    view: "back",
+    imageKey: "scapula-back",
+    x: 45,
+    y: 48,
+  },
+  infraspinatus_scapula: {
+    id: "infraspinatus_scapula",
+    label: "Infraspinatus",
+    technicalAnchor: "Scapular / infraspinatus region",
+    regionId: "shoulder",
+    view: "back",
+    imageKey: "scapula-back",
+    x: 56,
+    y: 43,
+  },
+  scapular_support_area: {
+    id: "scapular_support_area",
+    label: "Scapular Support",
+    technicalAnchor: "Scapular stabilizer support region",
+    regionId: "shoulder",
+    view: "back",
+    imageKey: "scapula-back",
+    x: 53,
+    y: 55,
   },
 
-  // =========================
   // LOW BACK / SI
-  // =========================
   lumbar_center: {
     id: "lumbar_center",
     label: "Lumbar Center",
@@ -115,27 +246,37 @@ export const PAD_PLACEMENT_ANCHORS: Record<string, PadPlacementAnchor> = {
     view: "back",
     imageKey: "low-back-back",
     x: 50,
-    y: 43,
+    y: 45,
   },
-  lumbar_left: {
-    id: "lumbar_left",
+  lumbar_paraspinal_left: {
+    id: "lumbar_paraspinal_left",
     label: "Left Lumbar",
     technicalAnchor: "Left lumbar paraspinal region",
     regionId: "low_back",
     view: "back",
     imageKey: "low-back-back",
-    x: 45,
-    y: 44,
+    x: 44,
+    y: 46,
   },
-  lumbar_right: {
-    id: "lumbar_right",
+  lumbar_paraspinal_right: {
+    id: "lumbar_paraspinal_right",
     label: "Right Lumbar",
     technicalAnchor: "Right lumbar paraspinal region",
     regionId: "low_back",
     view: "back",
     imageKey: "low-back-back",
-    x: 55,
-    y: 44,
+    x: 56,
+    y: 46,
+  },
+  sacroiliac_joint_left: {
+    id: "sacroiliac_joint_left",
+    label: "SI Joint",
+    technicalAnchor: "Sacroiliac / SI Joint region",
+    regionId: "low_back",
+    view: "back",
+    imageKey: "low-back-back",
+    x: 49,
+    y: 57,
   },
   sacrum_center: {
     id: "sacrum_center",
@@ -145,145 +286,71 @@ export const PAD_PLACEMENT_ANCHORS: Record<string, PadPlacementAnchor> = {
     view: "back",
     imageKey: "low-back-back",
     x: 50,
-    y: 59,
+    y: 61,
   },
-  si_joint_left: {
-    id: "si_joint_left",
-    label: "Left SI Joint",
-    technicalAnchor: "Left Sacroiliac / SI Joint region",
+  lumbosacral_support: {
+    id: "lumbosacral_support",
+    label: "Lumbosacral Support",
+    technicalAnchor: "Lumbosacral / SI-adjacent support region",
     regionId: "low_back",
     view: "back",
     imageKey: "low-back-back",
-    x: 46,
-    y: 56,
-  },
-  si_joint_right: {
-    id: "si_joint_right",
-    label: "Right SI Joint",
-    technicalAnchor: "Right Sacroiliac / SI Joint region",
-    regionId: "low_back",
-    view: "back",
-    imageKey: "low-back-back",
-    x: 54,
-    y: 56,
-  },
-  lumbosacral_support_left: {
-    id: "lumbosacral_support_left",
-    label: "Left Lumbosacral Support",
-    technicalAnchor: "Left lumbosacral support region",
-    regionId: "low_back",
-    view: "back",
-    imageKey: "low-back-back",
-    x: 43,
-    y: 49,
-  },
-  lumbosacral_support_right: {
-    id: "lumbosacral_support_right",
-    label: "Right Lumbosacral Support",
-    technicalAnchor: "Right lumbosacral support region",
-    regionId: "low_back",
-    view: "back",
-    imageKey: "low-back-back",
-    x: 57,
-    y: 49,
+    x: 56,
+    y: 52,
   },
 
-  // =========================
-  // HIP / GLUTE
-  // =========================
-  glute_center: {
-    id: "glute_center",
-    label: "Glute Center",
-    technicalAnchor: "Central gluteal region",
-    regionId: "hip_glute",
-    view: "back",
-    imageKey: "hip-glute-back",
-    x: 44,
-    y: 60,
-  },
+  // HIP / GLUTE / PELVIS
   deep_glute_piriformis: {
     id: "deep_glute_piriformis",
-    label: "Piriformis / Deep Glute",
-    technicalAnchor: "Piriformis / deep glute region",
+    label: "Deep Glute",
+    technicalAnchor: "Glute / Piriformis region",
     regionId: "hip_glute",
     view: "back",
     imageKey: "hip-glute-back",
-    x: 48,
+    x: 53,
     y: 58,
   },
-  lateral_hip_greater_trochanter: {
-    id: "lateral_hip_greater_trochanter",
-    label: "Lateral Hip / Greater Trochanter",
-    technicalAnchor: "Greater Trochanter / lateral hip region",
+  greater_trochanter_lateral_hip: {
+    id: "greater_trochanter_lateral_hip",
+    label: "Greater Trochanter",
+    technicalAnchor: "Greater Trochanter / Lateral hip region",
     regionId: "hip_glute",
     view: "back",
     imageKey: "hip-glute-back",
-    x: 30,
+    x: 70,
     y: 55,
-  },
-  posterior_hip_support: {
-    id: "posterior_hip_support",
-    label: "Posterior Hip Support",
-    technicalAnchor: "Posterolateral hip support region",
-    regionId: "hip_glute",
-    view: "back",
-    imageKey: "hip-glute-back",
-    x: 35,
-    y: 48,
   },
   asis_front_hip_bone: {
     id: "asis_front_hip_bone",
-    label: "ASIS / Front Hip Bone",
+    label: "ASIS / Front Hip",
     technicalAnchor: "ASIS / Front hip bone support region",
     regionId: "hip_glute",
     view: "front",
     imageKey: "hip-front",
-    x: 63,
+    x: 62,
     y: 50,
   },
   hip_flexor_front: {
     id: "hip_flexor_front",
     label: "Hip Flexor",
-    technicalAnchor: "Anterior hip / Hip flexor region",
+    technicalAnchor: "Anterior hip / hip flexor region",
     regionId: "hip_glute",
     view: "front",
     imageKey: "hip-front",
-    x: 60,
+    x: 52,
     y: 58,
   },
-  front_lateral_hip_support: {
-    id: "front_lateral_hip_support",
-    label: "Front Lateral Hip",
-    technicalAnchor: "Anterolateral hip support region",
-    regionId: "hip_glute",
-    view: "front",
-    imageKey: "hip-front",
-    x: 69,
-    y: 54,
-  },
 
-  // =========================
   // KNEE
-  // =========================
   quadriceps_tendon_suprapatellar: {
     id: "quadriceps_tendon_suprapatellar",
-    label: "Quadriceps Tendon",
+    label: "Quad Tendon",
     technicalAnchor: "Quadriceps Tendon / Suprapatellar region",
     regionId: "knee",
     view: "front",
     imageKey: "knee-front",
     x: 53,
-    y: 38,
-  },
-  patella_center: {
-    id: "patella_center",
-    label: "Patella",
-    technicalAnchor: "Patellar / kneecap region",
-    regionId: "knee",
-    view: "front",
-    imageKey: "knee-front",
-    x: 53,
-    y: 49,
+    y: 45,
   },
   patellar_tendon_tibial_tuberosity: {
     id: "patellar_tendon_tibial_tuberosity",
@@ -293,159 +360,117 @@ export const PAD_PLACEMENT_ANCHORS: Record<string, PadPlacementAnchor> = {
     view: "front",
     imageKey: "knee-front",
     x: 53,
-    y: 61,
-  },
-  medial_knee: {
-    id: "medial_knee",
-    label: "Medial Knee",
-    technicalAnchor: "Medial knee region",
-    regionId: "knee",
-    view: "front",
-    imageKey: "knee-front",
-    x: 45,
-    y: 50,
-  },
-  lateral_knee: {
-    id: "lateral_knee",
-    label: "Lateral Knee",
-    technicalAnchor: "Lateral knee region",
-    regionId: "knee",
-    view: "front",
-    imageKey: "knee-front",
-    x: 61,
-    y: 50,
+    y: 60,
   },
 
-  // =========================
   // FOOT / ANKLE
-  // =========================
-  heel_center: {
-    id: "heel_center",
-    label: "Heel",
-    technicalAnchor: "Heel / calcaneal region",
-    regionId: "foot_ankle",
-    view: "front",
-    imageKey: "foot-ankle-front",
-    x: 22,
-    y: 58,
-  },
-  plantar_arch: {
-    id: "plantar_arch",
-    label: "Arch",
-    technicalAnchor: "Plantar arch region",
-    regionId: "foot_ankle",
-    view: "front",
-    imageKey: "foot-ankle-front",
-    x: 47,
-    y: 66,
-  },
   forefoot_metatarsal_ball: {
     id: "forefoot_metatarsal_ball",
     label: "Ball of Foot",
     technicalAnchor: "Forefoot / Metatarsal region",
     regionId: "foot_ankle",
-    view: "front",
-    imageKey: "foot-ankle-front",
-    x: 63,
-    y: 75,
+    view: "bottom",
+    imageKey: "foot-bottom-plantar",
+    x: 53,
+    y: 30,
   },
-  toes_distal: {
-    id: "toes_distal",
-    label: "Toes",
-    technicalAnchor: "Toe / distal forefoot region",
+  plantar_arch_bottom: {
+    id: "plantar_arch_bottom",
+    label: "Plantar Arch",
+    technicalAnchor: "Plantar arch region",
     regionId: "foot_ankle",
-    view: "front",
-    imageKey: "foot-ankle-front",
-    x: 80,
+    view: "bottom",
+    imageKey: "foot-bottom-plantar",
+    x: 49,
+    y: 58,
+  },
+  heel_calcaneal_bottom: {
+    id: "heel_calcaneal_bottom",
+    label: "Heel",
+    technicalAnchor: "Heel / calcaneal region",
+    regionId: "foot_ankle",
+    view: "bottom",
+    imageKey: "foot-bottom-plantar",
+    x: 49,
     y: 84,
   },
-  inner_ankle_medial: {
-    id: "inner_ankle_medial",
-    label: "Inner Ankle",
-    technicalAnchor: "Medial ankle region",
+  toes_forefoot_distal: {
+    id: "toes_forefoot_distal",
+    label: "Toes",
+    technicalAnchor: "Distal toe / forefoot region",
     regionId: "foot_ankle",
-    view: "front",
-    imageKey: "foot-ankle-front",
-    x: 35,
-    y: 37,
+    view: "bottom",
+    imageKey: "foot-bottom-plantar",
+    x: 54,
+    y: 16,
   },
-  outer_ankle_lateral: {
-    id: "outer_ankle_lateral",
-    label: "Outer Ankle",
-    technicalAnchor: "Lateral ankle region",
+  dorsal_foot_support: {
+    id: "dorsal_foot_support",
+    label: "Top Foot Support",
+    technicalAnchor: "Dorsal foot support pathway",
     regionId: "foot_ankle",
     view: "front",
     imageKey: "foot-ankle-front",
-    x: 26,
-    y: 45,
+    x: 54,
+    y: 61,
   },
-  achilles_tendon: {
-    id: "achilles_tendon",
-    label: "Achilles",
-    technicalAnchor: "Achilles tendon region",
+  ankle_front_support: {
+    id: "ankle_front_support",
+    label: "Ankle Support",
+    technicalAnchor: "Anterior ankle support region",
     regionId: "foot_ankle",
     view: "front",
     imageKey: "foot-ankle-front",
-    x: 19,
-    y: 31,
+    x: 50,
+    y: 42,
   },
 
-  // =========================
   // ARM / HAND
-  // =========================
-  upper_arm_deltoid: {
-    id: "upper_arm_deltoid",
-    label: "Upper Arm",
-    technicalAnchor: "Upper arm / Deltoid region",
+  forearm_mid_pathway: {
+    id: "forearm_mid_pathway",
+    label: "Forearm",
+    technicalAnchor: "Forearm flexor or extensor muscle-tendon pathway",
     regionId: "arm",
     view: "front",
     imageKey: "arm-front",
-    x: 43,
-    y: 22,
-  },
-  elbow_joint: {
-    id: "elbow_joint",
-    label: "Elbow",
-    technicalAnchor: "Elbow region",
-    regionId: "arm",
-    view: "front",
-    imageKey: "arm-front",
-    x: 43,
-    y: 44,
+    x: 45,
+    y: 62,
   },
   forearm_upper_pathway: {
     id: "forearm_upper_pathway",
     label: "Upper Forearm",
-    technicalAnchor: "Proximal forearm muscle-tendon pathway",
+    technicalAnchor: "Proximal forearm flexor or extensor pathway",
     regionId: "arm",
     view: "front",
     imageKey: "arm-front",
-    x: 44,
-    y: 54,
+    x: 45,
+    y: 48,
   },
-  forearm_mid_pathway: {
-    id: "forearm_mid_pathway",
-    label: "Forearm",
-    technicalAnchor: "Forearm flexor / extensor pathway",
+  elbow_support: {
+    id: "elbow_support",
+    label: "Elbow",
+    technicalAnchor: "Elbow support region",
     regionId: "arm",
     view: "front",
     imageKey: "arm-front",
-    x: 44,
-    y: 65,
+    x: 45,
+    y: 44,
   },
-  wrist_hand: {
-    id: "wrist_hand",
+  wrist_hand_support: {
+    id: "wrist_hand_support",
     label: "Wrist / Hand",
-    technicalAnchor: "Wrist / hand region",
+    technicalAnchor: "Wrist and hand support region",
     regionId: "arm",
     view: "front",
     imageKey: "arm-front",
-    x: 44,
-    y: 85,
+    x: 45,
+    y: 78,
   },
 };
 
-export function getPadPlacementAnchor(anchorId?: string | null): PadPlacementAnchor | null {
+export function getPadPlacementAnchor(
+  anchorId?: string | null
+): PadPlacementAnchor | null {
   if (!anchorId) {
     return null;
   }

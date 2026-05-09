@@ -1,7 +1,8 @@
-import type { BodyMapView, StableBodyRegionId } from "./bodyMapRegions";
+import type { StableBodyRegionId } from "./bodyMapRegions";
 import {
   getPadPlacementAnchor,
   type OverlayBaseImageKey,
+  type PadPlacementOverlayView,
 } from "./padPlacementAnchors";
 
 export type PadOverlayPoint = {
@@ -16,7 +17,7 @@ export type PadOverlayPoint = {
 export type PadOverlayView = {
   id: string;
   title?: string;
-  view: BodyMapView | "side";
+  view: PadPlacementOverlayView;
   regionId: StableBodyRegionId;
   imageKey: OverlayBaseImageKey;
   pads: PadOverlayPoint[];
@@ -45,20 +46,164 @@ type PadPlacementVisualSource = {
 };
 
 /**
- * CLEAN-SWEEP VISUAL SOURCES
+ * RULE-LEVEL VISUALS BUILT FROM REUSABLE TECHNICAL ANCHORS
  *
- * Rules reference reusable technical anchors from padPlacementAnchors.ts.
- * If a chip label here exactly matches the chip label in bodyMapRegions.ts,
- * it will render a dynamic pad overlay.
+ * Do not place raw x/y coordinates here.
+ * Each visual references named anchors from padPlacementAnchors.ts.
  *
- * If a chip still shows fallback after this change, it usually means:
- * 1) the chip label in your manifest is slightly different, or
- * 2) that chip still needs a visual entry added here.
+ * Technical anchor data controls the visual.
+ * Plain-language wording remains user-facing explanation.
  */
 const PAD_PLACEMENT_VISUAL_SOURCES: PadPlacementVisualSource[] = [
-  // =====================================
+  // HEAD / FACE / JAW
+  {
+    id: "head-forehead-head-neck",
+    regionId: "head",
+    chipLabel: "Forehead",
+    technicalArea: "Frontal region to Suboccipital / Upper Cervical region.",
+    padAnchors: [
+      {
+        padId: "pad1",
+        anchorId: "above_eyebrow_midline",
+        label: "Pad 1 — Forehead",
+      },
+      {
+        padId: "pad2",
+        anchorId: "suboccipital_upper_cervical",
+        label: "Pad 2 — Back Neck",
+      },
+    ],
+  },
+  {
+    id: "head-temple-head-neck",
+    regionId: "head",
+    chipLabel: "Temple",
+    technicalArea: "Temporalis / temple region to Suboccipital / Upper Cervical region.",
+    padAnchors: [
+      {
+        padId: "pad1",
+        anchorId: "temple_temporalis",
+        label: "Pad 1 — Temple",
+      },
+      {
+        padId: "pad2",
+        anchorId: "suboccipital_upper_cervical",
+        label: "Pad 2 — Back Neck",
+      },
+    ],
+  },
+  {
+    id: "head-jaw-tmj",
+    regionId: "head",
+    chipLabel: "Jaw / TMJ",
+    technicalArea: "TMJ / Masseter region to Temporalis / temple support region.",
+    padAnchors: [
+      {
+        padId: "pad1",
+        anchorId: "tmj_masseter",
+        label: "Pad 1 — TMJ / Jaw",
+      },
+      {
+        padId: "pad2",
+        anchorId: "temple_temporalis",
+        label: "Pad 2 — Temple",
+      },
+    ],
+  },
+  {
+    id: "head-cheek-sinus",
+    regionId: "head",
+    chipLabel: "Cheek",
+    technicalArea: "Maxillary sinus / cheek region to Frontal sinus support region.",
+    padAnchors: [
+      {
+        padId: "pad1",
+        anchorId: "maxillary_sinus_cheek",
+        label: "Pad 1 — Cheek",
+      },
+      {
+        padId: "pad2",
+        anchorId: "frontal_sinus_area",
+        label: "Pad 2 — Forehead",
+      },
+    ],
+  },
+  {
+    id: "head-sinus",
+    regionId: "head",
+    chipLabel: "Sinus",
+    technicalArea: "Frontal sinus region to Maxillary sinus / cheek region.",
+    padAnchors: [
+      {
+        padId: "pad1",
+        anchorId: "frontal_sinus_area",
+        label: "Pad 1 — Frontal Sinus",
+      },
+      {
+        padId: "pad2",
+        anchorId: "maxillary_sinus_cheek",
+        label: "Pad 2 — Cheek Sinus",
+      },
+    ],
+  },
+  {
+    id: "head-ear-area",
+    regionId: "head",
+    chipLabel: "Ear Area",
+    technicalArea: "Preauricular / ear-area support region to Upper Cervical region.",
+    padAnchors: [
+      {
+        padId: "pad1",
+        anchorId: "ear_area_support",
+        label: "Pad 1 — Ear Area",
+      },
+      {
+        padId: "pad2",
+        anchorId: "upper_cervical_midline",
+        label: "Pad 2 — Upper Cervical",
+      },
+    ],
+  },
+
+  // NECK
+  {
+    id: "neck-base-of-skull",
+    regionId: "neck",
+    chipLabel: "Base of Skull",
+    technicalArea: "Suboccipital / Upper Cervical region.",
+    padAnchors: [
+      {
+        padId: "pad1",
+        anchorId: "suboccipital_upper_cervical",
+        label: "Pad 1 — Base of Skull",
+      },
+      {
+        padId: "pad2",
+        anchorId: "upper_cervical_midline",
+        label: "Pad 2 — Upper Cervical",
+      },
+    ],
+  },
+  {
+    id: "neck-upper-cervical",
+    regionId: "neck",
+    chipLabel: "Upper Cervical",
+    technicalArea: "Upper Cervical region to Suboccipital region.",
+    padAnchors: [
+      {
+        padId: "pad1",
+        anchorId: "upper_cervical_midline",
+        label: "Pad 1 — Upper Cervical",
+      },
+      {
+        padId: "pad2",
+        anchorId: "suboccipital_upper_cervical",
+        label: "Pad 2 — Suboccipital",
+      },
+    ],
+  },
+
   // SHOULDER
-  // =====================================
   {
     id: "shoulder-front-coracoid",
     regionId: "shoulder",
@@ -69,31 +214,31 @@ const PAD_PLACEMENT_VISUAL_SOURCES: PadPlacementVisualSource[] = [
       {
         padId: "pad1",
         anchorId: "anterior_shoulder_coracoid",
-        label: "Pad 1 — Coracoid",
+        label: "Pad 1 — Front Shoulder",
       },
       {
         padId: "pad2",
-        anchorId: "posterior_rotator_cuff",
+        anchorId: "posterior_rotator_cuff_back",
         label: "Pad 2 — Rotator Cuff",
       },
     ],
   },
   {
-    id: "shoulder-top-ac-joint",
+    id: "shoulder-ac-joint",
     regionId: "shoulder",
     chipLabel: "Top Shoulder / AC Joint",
     technicalArea:
-      "Acromioclavicular / AC Joint region to Upper trapezius or lateral shoulder support region.",
+      "AC Joint / superior shoulder region to Levator scapulae / superior scapular region.",
     padAnchors: [
       {
         padId: "pad1",
-        anchorId: "ac_joint_top",
+        anchorId: "ac_joint_superior_shoulder",
         label: "Pad 1 — AC Joint",
       },
       {
         padId: "pad2",
-        anchorId: "upper_trapezius",
-        label: "Pad 2 — Upper Trap",
+        anchorId: "levator_scapulae_superior_scapula",
+        label: "Pad 2 — Scapular Support",
       },
     ],
   },
@@ -102,16 +247,16 @@ const PAD_PLACEMENT_VISUAL_SOURCES: PadPlacementVisualSource[] = [
     regionId: "shoulder",
     chipLabel: "Rotator Cuff",
     technicalArea:
-      "Posterior rotator cuff / Infraspinatus-Teres region to Lateral shoulder region.",
+      "Posterior Rotator Cuff / Infraspinatus-Teres region to Lateral shoulder region.",
     padAnchors: [
       {
         padId: "pad1",
-        anchorId: "posterior_rotator_cuff",
+        anchorId: "posterior_rotator_cuff_back",
         label: "Pad 1 — Rotator Cuff",
       },
       {
         padId: "pad2",
-        anchorId: "lateral_shoulder_support",
+        anchorId: "lateral_shoulder_back_support",
         label: "Pad 2 — Lateral Shoulder",
       },
     ],
@@ -120,18 +265,17 @@ const PAD_PLACEMENT_VISUAL_SOURCES: PadPlacementVisualSource[] = [
     id: "shoulder-rear-shoulder",
     regionId: "shoulder",
     chipLabel: "Rear Shoulder",
-    technicalArea:
-      "Posterior shoulder region to Lateral shoulder support region.",
+    technicalArea: "Posterior deltoid region to Scapular stabilizer region.",
     padAnchors: [
       {
         padId: "pad1",
-        anchorId: "rear_shoulder_posterior",
+        anchorId: "posterior_deltoid_back",
         label: "Pad 1 — Rear Shoulder",
       },
       {
         padId: "pad2",
-        anchorId: "lateral_shoulder_support",
-        label: "Pad 2 — Lateral Shoulder",
+        anchorId: "scapular_support_area",
+        label: "Pad 2 — Scapular Support",
       },
     ],
   },
@@ -139,18 +283,17 @@ const PAD_PLACEMENT_VISUAL_SOURCES: PadPlacementVisualSource[] = [
     id: "shoulder-scapula",
     regionId: "shoulder",
     chipLabel: "Shoulder Blade / Scapula",
-    technicalArea:
-      "Shoulder Blade / Scapular region to Upper trapezius support region.",
+    technicalArea: "Scapular / Rhomboid / Infraspinatus region.",
     padAnchors: [
       {
         padId: "pad1",
-        anchorId: "scapula_medial",
+        anchorId: "scapular_medial_border",
         label: "Pad 1 — Scapula",
       },
       {
         padId: "pad2",
-        anchorId: "upper_trapezius",
-        label: "Pad 2 — Upper Trap",
+        anchorId: "infraspinatus_scapula",
+        label: "Pad 2 — Infraspinatus",
       },
     ],
   },
@@ -158,31 +301,27 @@ const PAD_PLACEMENT_VISUAL_SOURCES: PadPlacementVisualSource[] = [
     id: "shoulder-upper-trap",
     regionId: "shoulder",
     chipLabel: "Upper Trap",
-    technicalArea:
-      "Upper trapezius region to AC joint or shoulder support region.",
+    technicalArea: "Upper Trapezius to Levator Scapulae / Superior scapular region.",
     padAnchors: [
       {
         padId: "pad1",
-        anchorId: "upper_trapezius",
+        anchorId: "upper_trapezius_back",
         label: "Pad 1 — Upper Trap",
       },
       {
         padId: "pad2",
-        anchorId: "ac_joint_top",
-        label: "Pad 2 — Shoulder Support",
+        anchorId: "levator_scapulae_superior_scapula",
+        label: "Pad 2 — Scapular Support",
       },
     ],
   },
 
-  // =====================================
-  // LOW BACK
-  // =====================================
+  // LOW BACK / SI
   {
     id: "low-back-lumbar-center",
     regionId: "low_back",
     chipLabel: "Lumbar Center",
-    technicalArea:
-      "Central lumbar region to lumbosacral support region.",
+    technicalArea: "Lumbar paraspinal region to Lumbosacral / Sacral support region.",
     padAnchors: [
       {
         padId: "pad1",
@@ -200,18 +339,17 @@ const PAD_PLACEMENT_VISUAL_SOURCES: PadPlacementVisualSource[] = [
     id: "low-back-left",
     regionId: "low_back",
     chipLabel: "Left Low Back",
-    technicalArea:
-      "Left lumbar paraspinal region to left lumbosacral support region.",
+    technicalArea: "Left lumbar paraspinal region to Sacral support region.",
     padAnchors: [
       {
         padId: "pad1",
-        anchorId: "lumbar_left",
+        anchorId: "lumbar_paraspinal_left",
         label: "Pad 1 — Left Lumbar",
       },
       {
         padId: "pad2",
-        anchorId: "lumbosacral_support_left",
-        label: "Pad 2 — Support",
+        anchorId: "sacrum_center",
+        label: "Pad 2 — Sacrum",
       },
     ],
   },
@@ -219,37 +357,17 @@ const PAD_PLACEMENT_VISUAL_SOURCES: PadPlacementVisualSource[] = [
     id: "low-back-right",
     regionId: "low_back",
     chipLabel: "Right Low Back",
-    technicalArea:
-      "Right lumbar paraspinal region to right lumbosacral support region.",
+    technicalArea: "Right lumbar paraspinal region to Sacral support region.",
     padAnchors: [
       {
         padId: "pad1",
-        anchorId: "lumbar_right",
+        anchorId: "lumbar_paraspinal_right",
         label: "Pad 1 — Right Lumbar",
       },
       {
         padId: "pad2",
-        anchorId: "lumbosacral_support_right",
-        label: "Pad 2 — Support",
-      },
-    ],
-  },
-  {
-    id: "low-back-sacrum",
-    regionId: "low_back",
-    chipLabel: "Sacrum",
-    technicalArea:
-      "Sacral region to lumbosacral / SI-adjacent support region.",
-    padAnchors: [
-      {
-        padId: "pad1",
         anchorId: "sacrum_center",
-        label: "Pad 1 — Sacrum",
-      },
-      {
-        padId: "pad2",
-        anchorId: "lumbosacral_support_right",
-        label: "Pad 2 — Support",
+        label: "Pad 2 — Sacrum",
       },
     ],
   },
@@ -262,7 +380,7 @@ const PAD_PLACEMENT_VISUAL_SOURCES: PadPlacementVisualSource[] = [
     padAnchors: [
       {
         padId: "pad1",
-        anchorId: "si_joint_right",
+        anchorId: "sacroiliac_joint_left",
         label: "Pad 1 — SI Joint",
       },
       {
@@ -272,73 +390,31 @@ const PAD_PLACEMENT_VISUAL_SOURCES: PadPlacementVisualSource[] = [
       },
     ],
   },
+  {
+    id: "low-back-sacrum",
+    regionId: "low_back",
+    chipLabel: "Sacrum",
+    technicalArea: "Sacral region to Lumbosacral / SI-adjacent support region.",
+    padAnchors: [
+      {
+        padId: "pad1",
+        anchorId: "sacrum_center",
+        label: "Pad 1 — Sacrum",
+      },
+      {
+        padId: "pad2",
+        anchorId: "lumbosacral_support",
+        label: "Pad 2 — Support",
+      },
+    ],
+  },
 
-  // =====================================
   // HIP / GLUTE
-  // =====================================
   {
-    id: "hip-glute-glute",
-    regionId: "hip_glute",
-    chipLabel: "Glute",
-    technicalArea:
-      "Central gluteal region to Greater Trochanter / lateral hip region.",
-    padAnchors: [
-      {
-        padId: "pad1",
-        anchorId: "glute_center",
-        label: "Pad 1 — Glute",
-      },
-      {
-        padId: "pad2",
-        anchorId: "lateral_hip_greater_trochanter",
-        label: "Pad 2 — Lateral Hip",
-      },
-    ],
-  },
-  {
-    id: "hip-glute-piriformis",
-    regionId: "hip_glute",
-    chipLabel: "Piriformis / Deep Glute",
-    technicalArea:
-      "Piriformis / deep glute region to posterolateral hip support region.",
-    padAnchors: [
-      {
-        padId: "pad1",
-        anchorId: "deep_glute_piriformis",
-        label: "Pad 1 — Piriformis",
-      },
-      {
-        padId: "pad2",
-        anchorId: "posterior_hip_support",
-        label: "Pad 2 — Support",
-      },
-    ],
-  },
-  {
-    id: "hip-glute-lateral-hip",
-    regionId: "hip_glute",
-    chipLabel: "Outer Hip / Greater Trochanter",
-    technicalArea:
-      "Greater Trochanter / lateral hip region to posterior hip support region.",
-    padAnchors: [
-      {
-        padId: "pad1",
-        anchorId: "lateral_hip_greater_trochanter",
-        label: "Pad 1 — Greater Trochanter",
-      },
-      {
-        padId: "pad2",
-        anchorId: "posterior_hip_support",
-        label: "Pad 2 — Support",
-      },
-    ],
-  },
-  {
-    id: "hip-glute-front-hip",
+    id: "hip-front-hip-flexor",
     regionId: "hip_glute",
     chipLabel: "Front Hip / Hip Flexor",
-    technicalArea:
-      "Anterior hip / Hip flexor region to ASIS / front hip bone support region.",
+    technicalArea: "Anterior hip / hip flexor region to ASIS support region.",
     padAnchors: [
       {
         padId: "pad1",
@@ -352,35 +428,68 @@ const PAD_PLACEMENT_VISUAL_SOURCES: PadPlacementVisualSource[] = [
       },
     ],
   },
+  {
+    id: "hip-outer-hip",
+    regionId: "hip_glute",
+    chipLabel: "Outer Hip",
+    technicalArea: "Greater Trochanter / Lateral hip region to Glute support region.",
+    padAnchors: [
+      {
+        padId: "pad1",
+        anchorId: "greater_trochanter_lateral_hip",
+        label: "Pad 1 — Outer Hip",
+      },
+      {
+        padId: "pad2",
+        anchorId: "deep_glute_piriformis",
+        label: "Pad 2 — Glute",
+      },
+    ],
+  },
+  {
+    id: "hip-glute-glute",
+    regionId: "hip_glute",
+    chipLabel: "Glute",
+    technicalArea: "Glute / Piriformis region to Greater Trochanter / Lateral hip region.",
+    padAnchors: [
+      {
+        padId: "pad1",
+        anchorId: "deep_glute_piriformis",
+        label: "Pad 1 — Glute",
+      },
+      {
+        padId: "pad2",
+        anchorId: "greater_trochanter_lateral_hip",
+        label: "Pad 2 — Lateral Hip",
+      },
+    ],
+  },
+  {
+    id: "hip-piriformis",
+    regionId: "hip_glute",
+    chipLabel: "Piriformis / Deep Glute",
+    technicalArea: "Deep Glute / Piriformis region to Greater Trochanter region.",
+    padAnchors: [
+      {
+        padId: "pad1",
+        anchorId: "deep_glute_piriformis",
+        label: "Pad 1 — Deep Glute",
+      },
+      {
+        padId: "pad2",
+        anchorId: "greater_trochanter_lateral_hip",
+        label: "Pad 2 — Outer Hip",
+      },
+    ],
+  },
 
-  // =====================================
   // KNEE
-  // =====================================
   {
     id: "knee-patella",
     regionId: "knee",
     chipLabel: "Kneecap / Patella",
     technicalArea:
-      "Patellar / kneecap region to Patellar Tendon / Tibial Tuberosity region.",
-    padAnchors: [
-      {
-        padId: "pad1",
-        anchorId: "patella_center",
-        label: "Pad 1 — Patella",
-      },
-      {
-        padId: "pad2",
-        anchorId: "patellar_tendon_tibial_tuberosity",
-        label: "Pad 2 — Patellar Tendon",
-      },
-    ],
-  },
-  {
-    id: "knee-above-knee",
-    regionId: "knee",
-    chipLabel: "Above Knee / Quad Tendon",
-    technicalArea:
-      "Quadriceps Tendon / Suprapatellar region to Patellar region.",
+      "Quadriceps Tendon / Suprapatellar region to Patellar Tendon / Tibial Tuberosity region.",
     padAnchors: [
       {
         padId: "pad1",
@@ -389,87 +498,27 @@ const PAD_PLACEMENT_VISUAL_SOURCES: PadPlacementVisualSource[] = [
       },
       {
         padId: "pad2",
-        anchorId: "patella_center",
-        label: "Pad 2 — Patella",
-      },
-    ],
-  },
-  {
-    id: "knee-below-knee",
-    regionId: "knee",
-    chipLabel: "Below Knee / Patellar Tendon",
-    technicalArea:
-      "Patellar Tendon / Tibial Tuberosity region to Patellar region.",
-    padAnchors: [
-      {
-        padId: "pad1",
         anchorId: "patellar_tendon_tibial_tuberosity",
-        label: "Pad 1 — Patellar Tendon",
-      },
-      {
-        padId: "pad2",
-        anchorId: "patella_center",
-        label: "Pad 2 — Patella",
-      },
-    ],
-  },
-  {
-    id: "knee-inner",
-    regionId: "knee",
-    chipLabel: "Inner Knee",
-    technicalArea:
-      "Medial knee region to Patellar support region.",
-    padAnchors: [
-      {
-        padId: "pad1",
-        anchorId: "medial_knee",
-        label: "Pad 1 — Medial Knee",
-      },
-      {
-        padId: "pad2",
-        anchorId: "patella_center",
-        label: "Pad 2 — Patella",
-      },
-    ],
-  },
-  {
-    id: "knee-outer",
-    regionId: "knee",
-    chipLabel: "Outer Knee",
-    technicalArea:
-      "Lateral knee region to Patellar support region.",
-    padAnchors: [
-      {
-        padId: "pad1",
-        anchorId: "lateral_knee",
-        label: "Pad 1 — Lateral Knee",
-      },
-      {
-        padId: "pad2",
-        anchorId: "patella_center",
-        label: "Pad 2 — Patella",
+        label: "Pad 2 — Patellar Tendon",
       },
     ],
   },
 
-  // =====================================
   // FOOT / ANKLE
-  // =====================================
   {
     id: "foot-heel",
     regionId: "foot_ankle",
     chipLabel: "Heel",
-    technicalArea:
-      "Heel / calcaneal region to plantar arch support region.",
+    technicalArea: "Heel / Calcaneal region to Plantar arch region.",
     padAnchors: [
       {
         padId: "pad1",
-        anchorId: "heel_center",
+        anchorId: "heel_calcaneal_bottom",
         label: "Pad 1 — Heel",
       },
       {
         padId: "pad2",
-        anchorId: "plantar_arch",
+        anchorId: "plantar_arch_bottom",
         label: "Pad 2 — Arch",
       },
     ],
@@ -478,27 +527,25 @@ const PAD_PLACEMENT_VISUAL_SOURCES: PadPlacementVisualSource[] = [
     id: "foot-arch",
     regionId: "foot_ankle",
     chipLabel: "Arch",
-    technicalArea:
-      "Plantar arch region to forefoot / metatarsal support region.",
+    technicalArea: "Plantar arch region to Heel or Forefoot support region.",
     padAnchors: [
       {
         padId: "pad1",
-        anchorId: "plantar_arch",
+        anchorId: "plantar_arch_bottom",
         label: "Pad 1 — Arch",
       },
       {
         padId: "pad2",
-        anchorId: "forefoot_metatarsal_ball",
-        label: "Pad 2 — Forefoot",
+        anchorId: "heel_calcaneal_bottom",
+        label: "Pad 2 — Heel",
       },
     ],
   },
   {
-    id: "foot-ball",
+    id: "foot-ball-of-foot",
     regionId: "foot_ankle",
     chipLabel: "Ball of Foot",
-    technicalArea:
-      "Forefoot / Metatarsal region to plantar arch support region.",
+    technicalArea: "Forefoot / Metatarsal region to Plantar arch pathway.",
     padAnchors: [
       {
         padId: "pad1",
@@ -507,7 +554,7 @@ const PAD_PLACEMENT_VISUAL_SOURCES: PadPlacementVisualSource[] = [
       },
       {
         padId: "pad2",
-        anchorId: "plantar_arch",
+        anchorId: "plantar_arch_bottom",
         label: "Pad 2 — Arch",
       },
     ],
@@ -516,37 +563,35 @@ const PAD_PLACEMENT_VISUAL_SOURCES: PadPlacementVisualSource[] = [
     id: "foot-toes",
     regionId: "foot_ankle",
     chipLabel: "Toes",
-    technicalArea:
-      "Toe / distal forefoot region to metatarsal support region.",
+    technicalArea: "Distal toe / forefoot region to Plantar arch pathway.",
     padAnchors: [
       {
         padId: "pad1",
-        anchorId: "toes_distal",
+        anchorId: "toes_forefoot_distal",
         label: "Pad 1 — Toes",
       },
       {
         padId: "pad2",
-        anchorId: "forefoot_metatarsal_ball",
-        label: "Pad 2 — Forefoot",
+        anchorId: "plantar_arch_bottom",
+        label: "Pad 2 — Arch",
       },
     ],
   },
   {
-    id: "foot-inner-ankle",
+    id: "foot-ankle-support",
     regionId: "foot_ankle",
     chipLabel: "Inner Ankle",
-    technicalArea:
-      "Medial ankle region to plantar arch support region.",
+    technicalArea: "Ankle support region to Dorsal foot support pathway.",
     padAnchors: [
       {
         padId: "pad1",
-        anchorId: "inner_ankle_medial",
-        label: "Pad 1 — Inner Ankle",
+        anchorId: "ankle_front_support",
+        label: "Pad 1 — Ankle",
       },
       {
         padId: "pad2",
-        anchorId: "plantar_arch",
-        label: "Pad 2 — Arch",
+        anchorId: "dorsal_foot_support",
+        label: "Pad 2 — Foot Support",
       },
     ],
   },
@@ -554,88 +599,27 @@ const PAD_PLACEMENT_VISUAL_SOURCES: PadPlacementVisualSource[] = [
     id: "foot-outer-ankle",
     regionId: "foot_ankle",
     chipLabel: "Outer Ankle",
-    technicalArea:
-      "Lateral ankle region to forefoot or arch support pathway.",
+    technicalArea: "Ankle support region to Dorsal foot support pathway.",
     padAnchors: [
       {
         padId: "pad1",
-        anchorId: "outer_ankle_lateral",
-        label: "Pad 1 — Outer Ankle",
+        anchorId: "ankle_front_support",
+        label: "Pad 1 — Ankle",
       },
       {
         padId: "pad2",
-        anchorId: "plantar_arch",
-        label: "Pad 2 — Arch",
-      },
-    ],
-  },
-  {
-    id: "foot-achilles",
-    regionId: "foot_ankle",
-    chipLabel: "Achilles",
-    technicalArea:
-      "Achilles tendon region to heel / calcaneal support region.",
-    padAnchors: [
-      {
-        padId: "pad1",
-        anchorId: "achilles_tendon",
-        label: "Pad 1 — Achilles",
-      },
-      {
-        padId: "pad2",
-        anchorId: "heel_center",
-        label: "Pad 2 — Heel",
+        anchorId: "dorsal_foot_support",
+        label: "Pad 2 — Foot Support",
       },
     ],
   },
 
-  // =====================================
   // ARM / HAND
-  // =====================================
-  {
-    id: "arm-upper-arm",
-    regionId: "arm",
-    chipLabel: "Upper Arm",
-    technicalArea:
-      "Upper arm / Deltoid region to proximal forearm support pathway.",
-    padAnchors: [
-      {
-        padId: "pad1",
-        anchorId: "upper_arm_deltoid",
-        label: "Pad 1 — Upper Arm",
-      },
-      {
-        padId: "pad2",
-        anchorId: "forearm_upper_pathway",
-        label: "Pad 2 — Support",
-      },
-    ],
-  },
-  {
-    id: "arm-elbow",
-    regionId: "arm",
-    chipLabel: "Elbow",
-    technicalArea:
-      "Elbow region to proximal forearm or upper arm support region.",
-    padAnchors: [
-      {
-        padId: "pad1",
-        anchorId: "elbow_joint",
-        label: "Pad 1 — Elbow",
-      },
-      {
-        padId: "pad2",
-        anchorId: "forearm_upper_pathway",
-        label: "Pad 2 — Forearm",
-      },
-    ],
-  },
   {
     id: "arm-forearm",
     regionId: "arm",
     chipLabel: "Forearm",
-    technicalArea:
-      "Forearm flexor or extensor muscle-tendon pathway.",
+    technicalArea: "Forearm flexor or extensor muscle-tendon pathway.",
     padAnchors: [
       {
         padId: "pad1",
@@ -650,16 +634,51 @@ const PAD_PLACEMENT_VISUAL_SOURCES: PadPlacementVisualSource[] = [
     ],
   },
   {
-    id: "arm-wrist-hand",
+    id: "arm-elbow",
     regionId: "arm",
-    chipLabel: "Wrist / Hand",
-    technicalArea:
-      "Wrist / hand region to forearm support pathway.",
+    chipLabel: "Elbow",
+    technicalArea: "Elbow support region to Forearm pathway.",
     padAnchors: [
       {
         padId: "pad1",
-        anchorId: "wrist_hand",
-        label: "Pad 1 — Wrist / Hand",
+        anchorId: "elbow_support",
+        label: "Pad 1 — Elbow",
+      },
+      {
+        padId: "pad2",
+        anchorId: "forearm_mid_pathway",
+        label: "Pad 2 — Forearm",
+      },
+    ],
+  },
+  {
+    id: "arm-wrist-hand",
+    regionId: "arm",
+    chipLabel: "Wrist",
+    technicalArea: "Wrist / hand region to Forearm pathway.",
+    padAnchors: [
+      {
+        padId: "pad1",
+        anchorId: "wrist_hand_support",
+        label: "Pad 1 — Wrist",
+      },
+      {
+        padId: "pad2",
+        anchorId: "forearm_mid_pathway",
+        label: "Pad 2 — Forearm",
+      },
+    ],
+  },
+  {
+    id: "arm-hand-palm",
+    regionId: "arm",
+    chipLabel: "Hand / Palm",
+    technicalArea: "Hand / palm region to Wrist / forearm pathway.",
+    padAnchors: [
+      {
+        padId: "pad1",
+        anchorId: "wrist_hand_support",
+        label: "Pad 1 — Hand",
       },
       {
         padId: "pad2",
@@ -676,13 +695,21 @@ function normalize(value?: string | null): string {
 
 function getViewTitle(imageKey: OverlayBaseImageKey): string {
   const titles: Record<OverlayBaseImageKey, string> = {
-    "shoulder-front": "Shoulder View",
+    "shoulder-front": "Front Shoulder View",
+    "shoulder-back": "Back Shoulder View",
+    "posterior-shoulder-back": "Posterior Shoulder View",
+    "scapula-back": "Scapula / Shoulder Blade View",
     "low-back-back": "Back View",
     "hip-glute-back": "Back Hip / Glute View",
     "hip-front": "Front Hip View",
     "knee-front": "Front Knee View",
     "foot-ankle-front": "Foot / Ankle View",
+    "foot-bottom-plantar": "Bottom Foot / Plantar View",
     "arm-front": "Arm View",
+    "head-face-front": "Head / Face Front View",
+    "head-neck-back": "Head / Neck Back View",
+    "head-side-jaw-tmj": "Jaw / TMJ Side View",
+    "sinus-face-front": "Sinus / Face View",
   };
 
   return titles[imageKey];
@@ -717,9 +744,7 @@ function buildVisualFromAnchors(
       id: padReference.padId,
       x: anchor.x,
       y: anchor.y,
-      label:
-        padReference.label ??
-        `${padReference.padId.toUpperCase()} — ${anchor.label}`,
+      label: padReference.label ?? `${padReference.padId.toUpperCase()} — ${anchor.label}`,
       anchorId: anchor.id,
       technicalAnchor: anchor.technicalAnchor,
     });

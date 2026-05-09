@@ -1,26 +1,34 @@
-import React, { useMemo } from 'react';
+import React, { useMemo } from "react";
 import {
   ImageSourcePropType,
   Pressable,
   StyleSheet,
   Text,
   View,
-} from 'react-native';
+} from "react-native";
 
-import armFrontImage from '../../assets/body-map/regions/arm-front.png';
-import footAnkleFrontImage from '../../assets/body-map/regions/foot-ankle-front.png';
-import hipFrontImage from '../../assets/body-map/regions/hip-front.png';
-import hipGluteBackImage from '../../assets/body-map/regions/hip-glute-back.png';
-import kneeFrontImage from '../../assets/body-map/regions/knee-front.png';
-import lowBackBackImage from '../../assets/body-map/regions/low-back-back.png';
-import shoulderFrontImage from '../../assets/body-map/regions/shoulder-front.png';
+import armFrontImage from "../../assets/body-map/regions/arm-front.png";
+import footAnkleFrontImage from "../../assets/body-map/regions/foot-ankle-front.png";
+import footBottomPlantarImage from "../../assets/body-map/regions/foot-bottom-plantar.png";
+import headFaceFrontImage from "../../assets/body-map/regions/head-face-front.png";
+import headNeckBackImage from "../../assets/body-map/regions/head-neck-back.png";
+import headSideJawTmjImage from "../../assets/body-map/regions/head-side-jaw-tmj.png";
+import hipFrontImage from "../../assets/body-map/regions/hip-front.png";
+import hipGluteBackImage from "../../assets/body-map/regions/hip-glute-back.png";
+import kneeFrontImage from "../../assets/body-map/regions/knee-front.png";
+import lowBackBackImage from "../../assets/body-map/regions/low-back-back.png";
+import posteriorShoulderBackImage from "../../assets/body-map/regions/posterior-shoulder-back.png";
+import scapulaBackImage from "../../assets/body-map/regions/scapula-back.png";
+import shoulderBackImage from "../../assets/body-map/regions/shoulder-back.png";
+import shoulderFrontImage from "../../assets/body-map/regions/shoulder-front.png";
+import sinusFaceFrontImage from "../../assets/body-map/regions/sinus-face-front.png";
 
-import type { StableBodyRegionId } from '../data/bodyMapRegions';
-import { getPadPlacementVisual } from '../data/padPlacementVisuals';
-import PadPlacementVisualPanel from './PadPlacementVisualPanel';
+import type { StableBodyRegionId } from "../data/bodyMapRegions";
+import { getPadPlacementVisual } from "../data/padPlacementVisuals";
+import PadPlacementVisualPanel from "./PadPlacementVisualPanel";
 
-import type { AzulAgentResponse } from '../services/azulAgent';
-import { matchProtocolPlacementStrategy } from '../services/protocolPlacementMatcher';
+import type { AzulAgentResponse } from "../services/azulAgent";
+import { matchProtocolPlacementStrategy } from "../services/protocolPlacementMatcher";
 
 type StrategyVisualTarget = {
   regionId: StableBodyRegionId;
@@ -28,57 +36,87 @@ type StrategyVisualTarget = {
 };
 
 const PAD_OVERLAY_BASE_IMAGES: Record<string, ImageSourcePropType> = {
-  'shoulder-front': shoulderFrontImage as ImageSourcePropType,
-  'low-back-back': lowBackBackImage as ImageSourcePropType,
-  'hip-glute-back': hipGluteBackImage as ImageSourcePropType,
-  'hip-front': hipFrontImage as ImageSourcePropType,
-  'knee-front': kneeFrontImage as ImageSourcePropType,
-  'foot-ankle-front': footAnkleFrontImage as ImageSourcePropType,
-  'arm-front': armFrontImage as ImageSourcePropType,
+  "arm-front": armFrontImage as ImageSourcePropType,
+  "foot-ankle-front": footAnkleFrontImage as ImageSourcePropType,
+  "foot-bottom-plantar": footBottomPlantarImage as ImageSourcePropType,
+  "head-face-front": headFaceFrontImage as ImageSourcePropType,
+  "head-neck-back": headNeckBackImage as ImageSourcePropType,
+  "head-side-jaw-tmj": headSideJawTmjImage as ImageSourcePropType,
+  "hip-front": hipFrontImage as ImageSourcePropType,
+  "hip-glute-back": hipGluteBackImage as ImageSourcePropType,
+  "knee-front": kneeFrontImage as ImageSourcePropType,
+  "low-back-back": lowBackBackImage as ImageSourcePropType,
+  "posterior-shoulder-back": posteriorShoulderBackImage as ImageSourcePropType,
+  "scapula-back": scapulaBackImage as ImageSourcePropType,
+  "shoulder-back": shoulderBackImage as ImageSourcePropType,
+  "shoulder-front": shoulderFrontImage as ImageSourcePropType,
+  "sinus-face-front": sinusFaceFrontImage as ImageSourcePropType,
 };
 
 const STRATEGY_TO_EXISTING_VISUAL: Partial<
   Record<string, StrategyVisualTarget>
 > = {
+  brain_fog_head_neck: {
+    regionId: "head",
+    chipLabel: "Forehead",
+  },
+  stress_nervous_system_head_neck: {
+    regionId: "head",
+    chipLabel: "Forehead",
+  },
+  headache_head_neck: {
+    regionId: "head",
+    chipLabel: "Temple",
+  },
+  sinus_head_face: {
+    regionId: "head",
+    chipLabel: "Sinus",
+  },
+  jaw_tmj_face: {
+    regionId: "head",
+    chipLabel: "Jaw / TMJ",
+  },
+
   upper_trap_tightness_pain: {
-    regionId: 'shoulder',
-    chipLabel: 'Upper Trap',
+    regionId: "shoulder",
+    chipLabel: "Upper Trap",
   },
   neck_to_shoulder_tension: {
-    regionId: 'shoulder',
-    chipLabel: 'Upper Trap',
+    regionId: "shoulder",
+    chipLabel: "Upper Trap",
   },
   shoulder_blade_tension: {
-    regionId: 'shoulder',
-    chipLabel: 'Shoulder Blade / Scapula',
+    regionId: "shoulder",
+    chipLabel: "Shoulder Blade / Scapula",
   },
   rotator_cuff_irritation: {
-    regionId: 'shoulder',
-    chipLabel: 'Rotator Cuff',
+    regionId: "shoulder",
+    chipLabel: "Rotator Cuff",
   },
+
   si_joint_local_or_hip_referral: {
-    regionId: 'low_back',
-    chipLabel: 'SI Joint',
+    regionId: "low_back",
+    chipLabel: "SI Joint",
   },
   low_back_general_ache: {
-    regionId: 'low_back',
-    chipLabel: 'Lumbar Center',
+    regionId: "low_back",
+    chipLabel: "Lumbar Center",
   },
   hip_glute_deep_tension: {
-    regionId: 'hip_glute',
-    chipLabel: 'Piriformis / Deep Glute',
+    regionId: "hip_glute",
+    chipLabel: "Piriformis / Deep Glute",
   },
   knee_front_patella_tendon: {
-    regionId: 'knee',
-    chipLabel: 'Kneecap / Patella',
+    regionId: "knee",
+    chipLabel: "Kneecap / Patella",
   },
   foot_arch_heel_forefoot: {
-    regionId: 'foot_ankle',
-    chipLabel: 'Arch',
+    regionId: "foot_ankle",
+    chipLabel: "Arch",
   },
   arm_elbow_wrist_overuse: {
-    regionId: 'arm',
-    chipLabel: 'Forearm',
+    regionId: "arm",
+    chipLabel: "Forearm",
   },
 };
 
@@ -139,10 +177,10 @@ function MatchedPlacementVisual({
 
     return matchProtocolPlacementStrategy({
       issueText,
-      padPlacementText: padPlacement.join(' '),
-      technicalAreaText: padPlacement.join(' '),
+      padPlacementText: padPlacement.join(" "),
+      technicalAreaText: padPlacement.join(" "),
       fullGuidanceText: [
-        issueText ?? '',
+        issueText ?? "",
         ...clinicalRead,
         ...protocolPlan,
         ...padPlacement,
@@ -150,7 +188,7 @@ function MatchedPlacementVisual({
         ...sessionTips,
         ...aftercare,
         ...escalation,
-      ].join(' '),
+      ].join(" "),
     });
   }, [response, issueText]);
 
@@ -282,14 +320,14 @@ export function ProtocolResponseCard({
   );
 }
 
-const navy = '#002366';
-const gold = '#D4AF37';
-const softText = '#474747';
-const lightBorder = 'rgba(0, 35, 102, 0.08)';
+const navy = "#002366";
+const gold = "#D4AF37";
+const softText = "#474747";
+const lightBorder = "rgba(0, 35, 102, 0.08)";
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 24,
     padding: 18,
     borderWidth: 1,
@@ -298,22 +336,22 @@ const styles = StyleSheet.create({
   },
   eyebrow: {
     color: gold,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     letterSpacing: 2.2,
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   agentName: {
     color: navy,
     fontSize: 22,
-    fontWeight: '800',
+    fontWeight: "800",
   },
   loading: {
     color: navy,
     fontSize: 15,
     lineHeight: 24,
-    fontStyle: 'italic',
-    fontWeight: '600',
+    fontStyle: "italic",
+    fontWeight: "600",
   },
   section: {
     gap: 6,
@@ -321,7 +359,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     color: navy,
     fontSize: 16,
-    fontWeight: '800',
+    fontWeight: "800",
   },
   bullet: {
     color: softText,
@@ -329,8 +367,8 @@ const styles = StyleSheet.create({
     lineHeight: 23,
   },
   matchedCard: {
-    backgroundColor: '#F8FAFC',
-    borderColor: '#DBE4EF',
+    backgroundColor: "#F8FAFC",
+    borderColor: "#DBE4EF",
     borderWidth: 1,
     borderRadius: 18,
     padding: 14,
@@ -339,26 +377,26 @@ const styles = StyleSheet.create({
   matchedEyebrow: {
     color: gold,
     fontSize: 11,
-    fontWeight: '900',
+    fontWeight: "900",
     letterSpacing: 2,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
   },
   matchedTitle: {
     color: navy,
     fontSize: 17,
-    fontWeight: '900',
+    fontWeight: "900",
   },
   matchedMeta: {
-    color: '#64748B',
+    color: "#64748B",
     fontSize: 12,
-    fontWeight: '800',
-    textTransform: 'uppercase',
+    fontWeight: "800",
+    textTransform: "uppercase",
   },
   matchedPlain: {
     color: navy,
     fontSize: 14,
     lineHeight: 21,
-    fontWeight: '800',
+    fontWeight: "800",
   },
   matchedTechnical: {
     color: softText,
@@ -366,8 +404,8 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   visualFallback: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#DBE4EF',
+    backgroundColor: "#FFFFFF",
+    borderColor: "#DBE4EF",
     borderWidth: 1,
     borderRadius: 16,
     padding: 14,
@@ -375,7 +413,7 @@ const styles = StyleSheet.create({
   visualFallbackTitle: {
     color: navy,
     fontSize: 14,
-    fontWeight: '900',
+    fontWeight: "900",
     marginBottom: 4,
   },
   visualFallbackText: {
@@ -384,18 +422,18 @@ const styles = StyleSheet.create({
     lineHeight: 19,
   },
   safetyNoteWrap: {
-    backgroundColor: '#FFF7ED',
-    borderColor: '#FED7AA',
+    backgroundColor: "#FFF7ED",
+    borderColor: "#FED7AA",
     borderWidth: 1,
     borderRadius: 14,
     padding: 10,
     gap: 4,
   },
   safetyNote: {
-    color: '#7C2D12',
+    color: "#7C2D12",
     fontSize: 12,
     lineHeight: 18,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   assessmentButton: {
     minHeight: 52,
@@ -403,15 +441,15 @@ const styles = StyleSheet.create({
     backgroundColor: navy,
     borderWidth: 1,
     borderColor: gold,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 18,
   },
   assessmentButtonLabel: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 15,
-    fontWeight: '800',
-    textAlign: 'center',
+    fontWeight: "800",
+    textAlign: "center",
   },
 });
 

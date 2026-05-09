@@ -15,104 +15,95 @@ export type StableBodyRegionId =
   | "foot_ankle";
 
 export type RegionImageFile =
-  | "head-face-front.png"
-  | "neck-front.png"
-  | "neck-back.png"
-  | "shoulder-front.png"
-  | "shoulder-back.png"
+  | "abdomen-front.png"
   | "arm-front.png"
   | "chest-front.png"
-  | "abdomen-front.png"
-  | "low-back-back.png"
+  | "foot-ankle-front.png"
+  | "foot-bottom-plantar.png"
+  | "head-face-front.png"
+  | "head-neck-back.png"
+  | "head-side-jaw-tmj.png"
   | "hip-front.png"
   | "hip-glute-back.png"
-  | "thigh-front.png"
   | "knee-front.png"
+  | "low-back-back.png"
   | "lower-leg-front.png"
-  | "foot-ankle-front.png";
+  | "neck-front.png"
+  | "posterior-shoulder-back.png"
+  | "scapula-back.png"
+  | "shoulder-back.png"
+  | "shoulder-front.png"
+  | "sinus-face-front.png"
+  | "thigh-front.png";
 
 export type PadPlacementImageFile =
-  | "head-face-front-placement.png"
-  | "neck-front-placement.png"
-  | "neck-back-placement.png"
-  | "shoulder-front-placement.png"
-  | "shoulder-back-placement.png"
   | "arm-front-placement.png"
-  | "chest-front-placement.png"
-  | "abdomen-front-placement.png"
-  | "low-back-back-placement.png"
-  | "hip-front-placement.png"
+  | "foot-ankle-front-placement.png"
   | "hip-glute-back-placement.png"
-  | "thigh-front-placement.png"
   | "knee-front-placement.png"
-  | "lower-leg-front-placement.png"
-  | "foot-ankle-front-placement.png";
+  | "low-back-back-placement.png"
+  | "shoulder-front-placement.png";
 
 export type BodyMapManifestRegion = {
   id: StableBodyRegionId;
   label: string;
-  frontImageFile: RegionImageFile | null;
-  backImageFile: RegionImageFile | null;
-  placementFrontImageFile: PadPlacementImageFile | null;
-  placementBackImageFile: PadPlacementImageFile | null;
+  shortLabel: string;
+  description: string;
+  frontImageFile?: RegionImageFile;
+  backImageFile?: RegionImageFile;
+  placementFrontImageFile?: PadPlacementImageFile;
+  placementBackImageFile?: PadPlacementImageFile;
   chips: string[];
   detailSupported: boolean;
 };
 
-export type BodyMapRect = {
-  left: number;
-  top: number;
-  width: number;
-  height: number;
-};
-
 export type FullBodyHotspot = {
   id: string;
-  regionId: StableBodyRegionId;
   view: BodyMapView;
-  tapRect: BodyMapRect;
+  regionId: StableBodyRegionId;
+  tapRect: {
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+  };
   priority: number;
 };
 
-/**
- * LOCKED BODY-MAP CONTRACT
- *
- * Full-body click -> stable region id -> approved detail image -> chips.
- *
- * This is the locked body-image contract.
- * Stable IDs must remain consistent.
- * Do not substitute unrelated body images.
- * Missing images must show fallback, not blank.
- * Detail images are reference images only; chips are the precise selector.
- */
-export const BODY_MAP_MANIFEST: Record<StableBodyRegionId, BodyMapManifestRegion> = {
+export const BODY_MAP_MANIFEST: Record<
+  StableBodyRegionId,
+  BodyMapManifestRegion
+> = {
   head: {
     id: "head",
     label: "Head / Face / Jaw",
+    shortLabel: "Head",
+    description:
+      "Head, face, jaw, sinus, temple, forehead, and head-neck support areas.",
     frontImageFile: "head-face-front.png",
-    backImageFile: null,
-    placementFrontImageFile: "head-face-front-placement.png",
-    placementBackImageFile: null,
+    backImageFile: "head-neck-back.png",
     chips: ["Forehead", "Temple", "Jaw / TMJ", "Cheek", "Sinus", "Ear Area"],
     detailSupported: true,
   },
   neck: {
     id: "neck",
     label: "Neck",
+    shortLabel: "Neck",
+    description: "Front and upper neck support area.",
     frontImageFile: "neck-front.png",
-    backImageFile: "neck-back.png",
-    placementFrontImageFile: "neck-front-placement.png",
-    placementBackImageFile: "neck-back-placement.png",
-    chips: ["Front Neck", "Side Neck", "Base of Skull", "Upper Trap", "Cervical Spine"],
+    backImageFile: "head-neck-back.png",
+    chips: ["Front Neck", "Side Neck", "Base of Skull", "Upper Cervical"],
     detailSupported: true,
   },
   shoulder: {
     id: "shoulder",
     label: "Shoulder",
+    shortLabel: "Shoulder",
+    description:
+      "Front shoulder, rotator cuff, shoulder blade, upper trap, and posterior shoulder support.",
     frontImageFile: "shoulder-front.png",
     backImageFile: "shoulder-back.png",
     placementFrontImageFile: "shoulder-front-placement.png",
-    placementBackImageFile: "shoulder-back-placement.png",
     chips: [
       "Front Shoulder / Coracoid Area",
       "Top Shoulder / AC Joint",
@@ -126,45 +117,37 @@ export const BODY_MAP_MANIFEST: Record<StableBodyRegionId, BodyMapManifestRegion
   arm: {
     id: "arm",
     label: "Arm / Hand",
+    shortLabel: "Arm",
+    description: "Arm, forearm, elbow, wrist, and hand pathway.",
     frontImageFile: "arm-front.png",
-    backImageFile: "arm-front.png",
     placementFrontImageFile: "arm-front-placement.png",
-    placementBackImageFile: "arm-front-placement.png",
-    chips: ["Upper Arm", "Elbow", "Forearm", "Wrist / Hand"],
+    chips: ["Upper Arm", "Elbow", "Forearm", "Wrist", "Hand / Palm"],
     detailSupported: true,
   },
   chest: {
     id: "chest",
     label: "Chest / Ribs",
+    shortLabel: "Chest",
+    description: "Chest, sternum, rib, and breathing-area support.",
     frontImageFile: "chest-front.png",
-    backImageFile: null,
-    placementFrontImageFile: "chest-front-placement.png",
-    placementBackImageFile: null,
-    chips: ["Sternum", "Pectoral Area", "Upper Rib", "Side Rib", "Intercostal Area"],
+    chips: ["Upper Chest", "Sternum", "Ribs", "Side Ribs"],
     detailSupported: true,
   },
   abdomen: {
     id: "abdomen",
     label: "Abdomen / Gut",
+    shortLabel: "Abdomen",
+    description: "Abdomen, stomach, lower abdomen, and digestive-area support.",
     frontImageFile: "abdomen-front.png",
-    backImageFile: null,
-    placementFrontImageFile: "abdomen-front-placement.png",
-    placementBackImageFile: null,
-    chips: [
-      "Upper Abdomen",
-      "Lower Abdomen",
-      "Left Abdomen",
-      "Right Abdomen",
-      "Center Abdomen / Gut",
-    ],
+    chips: ["Upper Abdomen", "Lower Abdomen", "Stomach Area", "Side Abdomen"],
     detailSupported: true,
   },
   low_back: {
     id: "low_back",
     label: "Low Back / SI",
-    frontImageFile: null,
+    shortLabel: "Low Back",
+    description: "Low back, lumbar, sacrum, and SI joint support.",
     backImageFile: "low-back-back.png",
-    placementFrontImageFile: null,
     placementBackImageFile: "low-back-back-placement.png",
     chips: ["Lumbar Center", "Left Low Back", "Right Low Back", "Sacrum", "SI Joint"],
     detailSupported: true,
@@ -172,273 +155,310 @@ export const BODY_MAP_MANIFEST: Record<StableBodyRegionId, BodyMapManifestRegion
   hip_glute: {
     id: "hip_glute",
     label: "Hip / Glute / Pelvis",
+    shortLabel: "Hip",
+    description: "Hip, glute, piriformis, pelvis, and front hip support.",
     frontImageFile: "hip-front.png",
     backImageFile: "hip-glute-back.png",
-    placementFrontImageFile: "hip-front-placement.png",
     placementBackImageFile: "hip-glute-back-placement.png",
     chips: [
+      "Front Hip / Hip Flexor",
+      "Outer Hip",
       "Glute",
       "Piriformis / Deep Glute",
-      "SI Joint",
-      "Lateral Hip / Greater Trochanter",
-      "Front Hip / Hip Flexor",
-      "Upper Hamstring Origin",
+      "Groin / Inner Hip",
     ],
     detailSupported: true,
   },
   thigh: {
     id: "thigh",
     label: "Thigh",
+    shortLabel: "Thigh",
+    description: "Front thigh and upper leg support.",
     frontImageFile: "thigh-front.png",
-    backImageFile: "thigh-front.png",
-    placementFrontImageFile: "thigh-front-placement.png",
-    placementBackImageFile: "thigh-front-placement.png",
-    chips: [
-      "Quad",
-      "Inner Thigh / Adductor",
-      "Outer Thigh / IT Band",
-      "Hamstring",
-      "Upper Thigh",
-    ],
+    chips: ["Quad", "Inner Thigh", "Outer Thigh", "Hamstring"],
     detailSupported: true,
   },
   knee: {
     id: "knee",
     label: "Knee",
+    shortLabel: "Knee",
+    description: "Knee, kneecap, patellar tendon, and knee support pathway.",
     frontImageFile: "knee-front.png",
-    backImageFile: "knee-front.png",
     placementFrontImageFile: "knee-front-placement.png",
-    placementBackImageFile: "knee-front-placement.png",
-    chips: [
-      "Kneecap / Patella",
-      "Inner Knee",
-      "Outer Knee",
-      "Back of Knee",
-      "Patellar Tendon",
-      "Quad Tendon",
-    ],
+    chips: ["Kneecap / Patella", "Above Knee", "Below Knee", "Inner Knee", "Outer Knee"],
     detailSupported: true,
   },
   lower_leg: {
     id: "lower_leg",
     label: "Lower Leg",
+    shortLabel: "Lower Leg",
+    description: "Shin, calf, lower leg, and Achilles pathway.",
     frontImageFile: "lower-leg-front.png",
-    backImageFile: "lower-leg-front.png",
-    placementFrontImageFile: "lower-leg-front-placement.png",
-    placementBackImageFile: "lower-leg-front-placement.png",
-    chips: ["Shin", "Calf", "Outer Lower Leg", "Achilles Area"],
+    chips: ["Shin", "Calf", "Achilles", "Outer Lower Leg"],
     detailSupported: true,
   },
   foot_ankle: {
     id: "foot_ankle",
     label: "Foot / Ankle",
+    shortLabel: "Foot",
+    description: "Foot, ankle, heel, arch, toes, and plantar pathway.",
     frontImageFile: "foot-ankle-front.png",
-    backImageFile: "foot-ankle-front.png",
     placementFrontImageFile: "foot-ankle-front-placement.png",
-    placementBackImageFile: "foot-ankle-front-placement.png",
     chips: ["Heel", "Arch", "Ball of Foot", "Toes", "Inner Ankle", "Outer Ankle", "Achilles"],
     detailSupported: true,
   },
 };
 
-export const STABLE_BODY_REGION_IDS: StableBodyRegionId[] = [
-  "head",
-  "neck",
-  "shoulder",
-  "arm",
-  "chest",
-  "abdomen",
-  "low_back",
-  "hip_glute",
-  "thigh",
-  "knee",
-  "lower_leg",
-  "foot_ankle",
+export const BODY_MAP_REGION_LIST: BodyMapManifestRegion[] = [
+  BODY_MAP_MANIFEST.head,
+  BODY_MAP_MANIFEST.neck,
+  BODY_MAP_MANIFEST.shoulder,
+  BODY_MAP_MANIFEST.arm,
+  BODY_MAP_MANIFEST.chest,
+  BODY_MAP_MANIFEST.abdomen,
+  BODY_MAP_MANIFEST.low_back,
+  BODY_MAP_MANIFEST.hip_glute,
+  BODY_MAP_MANIFEST.thigh,
+  BODY_MAP_MANIFEST.knee,
+  BODY_MAP_MANIFEST.lower_leg,
+  BODY_MAP_MANIFEST.foot_ankle,
 ];
 
-export const BODY_MAP_REGION_LIST = STABLE_BODY_REGION_IDS.map((id) => BODY_MAP_MANIFEST[id]);
-
-/**
- * Broad full-body tap zones.
- *
- * Lower body has been tuned upward because the visual knee/calf anatomy
- * sits higher in the full-body PNG than the previous tap boxes.
- */
 export const FULL_BODY_HOTSPOTS: FullBodyHotspot[] = [
-  // FRONT
   {
     id: "front-head",
-    regionId: "head",
     view: "front",
-    priority: 90,
-    tapRect: { left: 42, top: 3, width: 16, height: 12 },
+    regionId: "head",
+    tapRect: { left: 42, top: 4, width: 16, height: 12 },
+    priority: 10,
   },
   {
     id: "front-neck",
-    regionId: "neck",
     view: "front",
-    priority: 95,
-    tapRect: { left: 42, top: 12, width: 16, height: 9 },
+    regionId: "neck",
+    tapRect: { left: 43, top: 15, width: 14, height: 8 },
+    priority: 20,
   },
   {
-    id: "front-shoulder",
-    regionId: "shoulder",
+    id: "front-left-shoulder",
     view: "front",
-    priority: 100,
-    tapRect: { left: 28, top: 18, width: 44, height: 10 },
+    regionId: "shoulder",
+    tapRect: { left: 28, top: 20, width: 18, height: 11 },
+    priority: 30,
+  },
+  {
+    id: "front-right-shoulder",
+    view: "front",
+    regionId: "shoulder",
+    tapRect: { left: 54, top: 20, width: 18, height: 11 },
+    priority: 31,
   },
   {
     id: "front-left-arm",
-    regionId: "arm",
     view: "front",
-    priority: 70,
-    tapRect: { left: 21, top: 25, width: 17, height: 36 },
+    regionId: "arm",
+    tapRect: { left: 18, top: 28, width: 18, height: 30 },
+    priority: 45,
   },
   {
     id: "front-right-arm",
-    regionId: "arm",
     view: "front",
-    priority: 70,
-    tapRect: { left: 62, top: 25, width: 17, height: 36 },
+    regionId: "arm",
+    tapRect: { left: 64, top: 28, width: 18, height: 30 },
+    priority: 46,
   },
   {
     id: "front-chest",
-    regionId: "chest",
     view: "front",
-    priority: 60,
-    tapRect: { left: 34, top: 25, width: 32, height: 16 },
+    regionId: "chest",
+    tapRect: { left: 38, top: 25, width: 24, height: 15 },
+    priority: 40,
   },
   {
     id: "front-abdomen",
+    view: "front",
     regionId: "abdomen",
-    view: "front",
-    priority: 65,
-    tapRect: { left: 35, top: 39, width: 30, height: 17 },
+    tapRect: { left: 39, top: 40, width: 22, height: 18 },
+    priority: 50,
   },
   {
-    id: "front-hip-glute",
+    id: "front-hip",
+    view: "front",
     regionId: "hip_glute",
-    view: "front",
-    priority: 80,
-    tapRect: { left: 31, top: 52, width: 38, height: 11 },
-  },
-  {
-    id: "front-thigh",
-    regionId: "thigh",
-    view: "front",
+    tapRect: { left: 36, top: 57, width: 28, height: 12 },
     priority: 60,
-    tapRect: { left: 31, top: 61, width: 38, height: 8 },
   },
   {
-    id: "front-knee",
+    id: "front-left-thigh",
+    view: "front",
+    regionId: "thigh",
+    tapRect: { left: 35, top: 67, width: 12, height: 17 },
+    priority: 70,
+  },
+  {
+    id: "front-right-thigh",
+    view: "front",
+    regionId: "thigh",
+    tapRect: { left: 53, top: 67, width: 12, height: 17 },
+    priority: 71,
+  },
+  {
+    id: "front-left-knee",
+    view: "front",
     regionId: "knee",
-    view: "front",
-    priority: 120,
-    tapRect: { left: 31, top: 68, width: 38, height: 8 },
+    tapRect: { left: 35, top: 82, width: 12, height: 8 },
+    priority: 80,
   },
   {
-    id: "front-lower-leg",
+    id: "front-right-knee",
+    view: "front",
+    regionId: "knee",
+    tapRect: { left: 53, top: 82, width: 12, height: 8 },
+    priority: 81,
+  },
+  {
+    id: "front-left-lower-leg",
+    view: "front",
     regionId: "lower_leg",
-    view: "front",
-    priority: 115,
-    tapRect: { left: 31, top: 75, width: 38, height: 17 },
+    tapRect: { left: 34, top: 89, width: 13, height: 8 },
+    priority: 90,
   },
   {
-    id: "front-foot-ankle",
-    regionId: "foot_ankle",
+    id: "front-right-lower-leg",
     view: "front",
-    priority: 125,
-    tapRect: { left: 27, top: 90, width: 46, height: 10 },
+    regionId: "lower_leg",
+    tapRect: { left: 53, top: 89, width: 13, height: 8 },
+    priority: 91,
+  },
+  {
+    id: "front-left-foot",
+    view: "front",
+    regionId: "foot_ankle",
+    tapRect: { left: 30, top: 96, width: 18, height: 4 },
+    priority: 100,
+  },
+  {
+    id: "front-right-foot",
+    view: "front",
+    regionId: "foot_ankle",
+    tapRect: { left: 52, top: 96, width: 18, height: 4 },
+    priority: 101,
   },
 
-  // BACK
   {
     id: "back-head",
-    regionId: "head",
     view: "back",
-    priority: 90,
-    tapRect: { left: 42, top: 3, width: 16, height: 12 },
+    regionId: "head",
+    tapRect: { left: 42, top: 4, width: 16, height: 12 },
+    priority: 10,
   },
   {
     id: "back-neck",
-    regionId: "neck",
     view: "back",
-    priority: 95,
-    tapRect: { left: 42, top: 12, width: 16, height: 9 },
+    regionId: "neck",
+    tapRect: { left: 43, top: 15, width: 14, height: 8 },
+    priority: 20,
   },
   {
-    id: "back-shoulder",
-    regionId: "shoulder",
+    id: "back-left-shoulder",
     view: "back",
-    priority: 100,
-    tapRect: { left: 27, top: 18, width: 46, height: 13 },
+    regionId: "shoulder",
+    tapRect: { left: 27, top: 20, width: 19, height: 11 },
+    priority: 30,
+  },
+  {
+    id: "back-right-shoulder",
+    view: "back",
+    regionId: "shoulder",
+    tapRect: { left: 54, top: 20, width: 19, height: 11 },
+    priority: 31,
   },
   {
     id: "back-left-arm",
-    regionId: "arm",
     view: "back",
-    priority: 70,
-    tapRect: { left: 21, top: 27, width: 17, height: 35 },
+    regionId: "arm",
+    tapRect: { left: 17, top: 28, width: 18, height: 30 },
+    priority: 45,
   },
   {
     id: "back-right-arm",
+    view: "back",
     regionId: "arm",
-    view: "back",
-    priority: 70,
-    tapRect: { left: 62, top: 27, width: 17, height: 35 },
-  },
-  {
-    id: "back-chest-ribs",
-    regionId: "chest",
-    view: "back",
-    priority: 45,
-    tapRect: { left: 34, top: 29, width: 32, height: 12 },
+    tapRect: { left: 65, top: 28, width: 18, height: 30 },
+    priority: 46,
   },
   {
     id: "back-low-back",
-    regionId: "low_back",
     view: "back",
-    priority: 90,
-    tapRect: { left: 34, top: 39, width: 32, height: 16 },
+    regionId: "low_back",
+    tapRect: { left: 38, top: 43, width: 24, height: 17 },
+    priority: 50,
   },
   {
     id: "back-hip-glute",
+    view: "back",
     regionId: "hip_glute",
-    view: "back",
-    priority: 85,
-    tapRect: { left: 30, top: 53, width: 40, height: 11 },
-  },
-  {
-    id: "back-thigh",
-    regionId: "thigh",
-    view: "back",
+    tapRect: { left: 35, top: 58, width: 30, height: 13 },
     priority: 60,
-    tapRect: { left: 31, top: 62, width: 38, height: 8 },
   },
   {
-    id: "back-knee",
+    id: "back-left-thigh",
+    view: "back",
+    regionId: "thigh",
+    tapRect: { left: 34, top: 70, width: 13, height: 14 },
+    priority: 70,
+  },
+  {
+    id: "back-right-thigh",
+    view: "back",
+    regionId: "thigh",
+    tapRect: { left: 53, top: 70, width: 13, height: 14 },
+    priority: 71,
+  },
+  {
+    id: "back-left-knee",
+    view: "back",
     regionId: "knee",
-    view: "back",
-    priority: 120,
-    tapRect: { left: 31, top: 69, width: 38, height: 8 },
+    tapRect: { left: 34, top: 83, width: 13, height: 7 },
+    priority: 80,
   },
   {
-    id: "back-lower-leg",
+    id: "back-right-knee",
+    view: "back",
+    regionId: "knee",
+    tapRect: { left: 53, top: 83, width: 13, height: 7 },
+    priority: 81,
+  },
+  {
+    id: "back-left-lower-leg",
+    view: "back",
     regionId: "lower_leg",
-    view: "back",
-    priority: 115,
-    tapRect: { left: 31, top: 76, width: 38, height: 16 },
+    tapRect: { left: 34, top: 89, width: 13, height: 8 },
+    priority: 90,
   },
   {
-    id: "back-foot-ankle",
-    regionId: "foot_ankle",
+    id: "back-right-lower-leg",
     view: "back",
-    priority: 125,
-    tapRect: { left: 27, top: 90, width: 46, height: 10 },
+    regionId: "lower_leg",
+    tapRect: { left: 53, top: 89, width: 13, height: 8 },
+    priority: 91,
+  },
+  {
+    id: "back-left-foot",
+    view: "back",
+    regionId: "foot_ankle",
+    tapRect: { left: 30, top: 96, width: 18, height: 4 },
+    priority: 100,
+  },
+  {
+    id: "back-right-foot",
+    view: "back",
+    regionId: "foot_ankle",
+    tapRect: { left: 52, top: 96, width: 18, height: 4 },
+    priority: 101,
   },
 ];
 
-// Compatibility exports in case old code imports these names.
 export const bodyMapManifest = BODY_MAP_MANIFEST;
 export const bodyMapRegions = BODY_MAP_REGION_LIST;
 export const fullBodyHotspots = FULL_BODY_HOTSPOTS;

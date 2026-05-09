@@ -16,13 +16,21 @@ import abdomenFrontImage from "../../assets/body-map/regions/abdomen-front.png";
 import armFrontImage from "../../assets/body-map/regions/arm-front.png";
 import chestFrontImage from "../../assets/body-map/regions/chest-front.png";
 import footAnkleFrontImage from "../../assets/body-map/regions/foot-ankle-front.png";
+import footBottomPlantarImage from "../../assets/body-map/regions/foot-bottom-plantar.png";
+import headFaceFrontImage from "../../assets/body-map/regions/head-face-front.png";
+import headNeckBackImage from "../../assets/body-map/regions/head-neck-back.png";
+import headSideJawTmjImage from "../../assets/body-map/regions/head-side-jaw-tmj.png";
 import hipFrontImage from "../../assets/body-map/regions/hip-front.png";
 import hipGluteBackImage from "../../assets/body-map/regions/hip-glute-back.png";
 import kneeFrontImage from "../../assets/body-map/regions/knee-front.png";
 import lowBackBackImage from "../../assets/body-map/regions/low-back-back.png";
 import lowerLegFrontImage from "../../assets/body-map/regions/lower-leg-front.png";
 import neckFrontImage from "../../assets/body-map/regions/neck-front.png";
+import posteriorShoulderBackImage from "../../assets/body-map/regions/posterior-shoulder-back.png";
+import scapulaBackImage from "../../assets/body-map/regions/scapula-back.png";
+import shoulderBackImage from "../../assets/body-map/regions/shoulder-back.png";
 import shoulderFrontImage from "../../assets/body-map/regions/shoulder-front.png";
+import sinusFaceFrontImage from "../../assets/body-map/regions/sinus-face-front.png";
 import thighFrontImage from "../../assets/body-map/regions/thigh-front.png";
 
 import armFrontPlacementImage from "../../assets/body-map/pad-placement/arm-front-placement.png";
@@ -36,8 +44,6 @@ import {
   BODY_MAP_MANIFEST,
   BodyMapView,
   FULL_BODY_HOTSPOTS,
-  PadPlacementImageFile,
-  RegionImageFile,
   StableBodyRegionId,
 } from "../data/bodyMapRegions";
 
@@ -64,18 +70,27 @@ const SHOW_PLACEMENT_CALIBRATION_TOOL = true;
  * Do not substitute unrelated images.
  * Missing images must show fallback, not blank.
  */
-const REGION_DETAIL_IMAGES: Partial<Record<RegionImageFile, ImageSourcePropType>> = {
+const REGION_DETAIL_IMAGES: Partial<Record<string, ImageSourcePropType>> = {
   "abdomen-front.png": abdomenFrontImage as ImageSourcePropType,
   "arm-front.png": armFrontImage as ImageSourcePropType,
   "chest-front.png": chestFrontImage as ImageSourcePropType,
   "foot-ankle-front.png": footAnkleFrontImage as ImageSourcePropType,
+  "foot-bottom-plantar.png": footBottomPlantarImage as ImageSourcePropType,
+  "head-face-front.png": headFaceFrontImage as ImageSourcePropType,
+  "head-neck-back.png": headNeckBackImage as ImageSourcePropType,
+  "head-side-jaw-tmj.png": headSideJawTmjImage as ImageSourcePropType,
   "hip-front.png": hipFrontImage as ImageSourcePropType,
   "hip-glute-back.png": hipGluteBackImage as ImageSourcePropType,
   "knee-front.png": kneeFrontImage as ImageSourcePropType,
   "low-back-back.png": lowBackBackImage as ImageSourcePropType,
   "lower-leg-front.png": lowerLegFrontImage as ImageSourcePropType,
   "neck-front.png": neckFrontImage as ImageSourcePropType,
+  "posterior-shoulder-back.png":
+    posteriorShoulderBackImage as ImageSourcePropType,
+  "scapula-back.png": scapulaBackImage as ImageSourcePropType,
+  "shoulder-back.png": shoulderBackImage as ImageSourcePropType,
   "shoulder-front.png": shoulderFrontImage as ImageSourcePropType,
+  "sinus-face-front.png": sinusFaceFrontImage as ImageSourcePropType,
   "thigh-front.png": thighFrontImage as ImageSourcePropType,
 };
 
@@ -88,9 +103,7 @@ const REGION_DETAIL_IMAGES: Partial<Record<RegionImageFile, ImageSourcePropType>
  * Do not substitute unrelated placement images.
  * Missing placement images must show fallback, not blank.
  */
-const PAD_PLACEMENT_IMAGES: Partial<
-  Record<PadPlacementImageFile, ImageSourcePropType>
-> = {
+const PAD_PLACEMENT_IMAGES: Partial<Record<string, ImageSourcePropType>> = {
   "arm-front-placement.png": armFrontPlacementImage as ImageSourcePropType,
   "foot-ankle-front-placement.png":
     footAnkleFrontPlacementImage as ImageSourcePropType,
@@ -111,13 +124,21 @@ const PAD_PLACEMENT_IMAGES: Partial<
  * actual placement rule without rewriting the wording.
  */
 const PAD_OVERLAY_BASE_IMAGES: Record<string, ImageSourcePropType> = {
-  "shoulder-front": shoulderFrontImage as ImageSourcePropType,
-  "low-back-back": lowBackBackImage as ImageSourcePropType,
-  "hip-glute-back": hipGluteBackImage as ImageSourcePropType,
-  "hip-front": hipFrontImage as ImageSourcePropType,
-  "knee-front": kneeFrontImage as ImageSourcePropType,
-  "foot-ankle-front": footAnkleFrontImage as ImageSourcePropType,
   "arm-front": armFrontImage as ImageSourcePropType,
+  "foot-ankle-front": footAnkleFrontImage as ImageSourcePropType,
+  "foot-bottom-plantar": footBottomPlantarImage as ImageSourcePropType,
+  "head-face-front": headFaceFrontImage as ImageSourcePropType,
+  "head-neck-back": headNeckBackImage as ImageSourcePropType,
+  "head-side-jaw-tmj": headSideJawTmjImage as ImageSourcePropType,
+  "hip-front": hipFrontImage as ImageSourcePropType,
+  "hip-glute-back": hipGluteBackImage as ImageSourcePropType,
+  "knee-front": kneeFrontImage as ImageSourcePropType,
+  "low-back-back": lowBackBackImage as ImageSourcePropType,
+  "posterior-shoulder-back": posteriorShoulderBackImage as ImageSourcePropType,
+  "scapula-back": scapulaBackImage as ImageSourcePropType,
+  "shoulder-back": shoulderBackImage as ImageSourcePropType,
+  "shoulder-front": shoulderFrontImage as ImageSourcePropType,
+  "sinus-face-front": sinusFaceFrontImage as ImageSourcePropType,
 };
 
 function resolveOverlayBaseImage(imageKey: string): ImageSourcePropType | null {
@@ -141,7 +162,9 @@ type FlexibleBodyMapProps = {
   [key: string]: unknown;
 };
 
-function normalizeRegionId(value: string | null | undefined): StableBodyRegionId | null {
+function normalizeRegionId(
+  value: string | null | undefined
+): StableBodyRegionId | null {
   if (!value) return null;
 
   const normalized = String(value)
@@ -263,7 +286,9 @@ export function BodyMap(props: FlexibleBodyMapProps) {
   const [view, setView] = useState<BodyMapView>("front");
   const [activeDetailRegionId, setActiveDetailRegionId] =
     useState<StableBodyRegionId | null>(null);
-  const [failedImageKeys, setFailedImageKeys] = useState<Record<string, boolean>>({});
+  const [failedImageKeys, setFailedImageKeys] = useState<
+    Record<string, boolean>
+  >({});
 
   const activeDetailRegion = activeDetailRegionId
     ? BODY_MAP_MANIFEST[activeDetailRegionId]
@@ -280,7 +305,9 @@ export function BodyMap(props: FlexibleBodyMapProps) {
   const detailImageFailed = failedImageKeys[activeDetailImageKey] === true;
 
   const selectedChipLabel =
-    activeDetailRegion && selectedBodyArea && activeDetailRegion.chips.includes(selectedBodyArea)
+    activeDetailRegion &&
+    selectedBodyArea &&
+    activeDetailRegion.chips.includes(selectedBodyArea)
       ? selectedBodyArea
       : null;
 
@@ -313,7 +340,9 @@ export function BodyMap(props: FlexibleBodyMapProps) {
 
   const visibleSelectedLabel =
     selectedBodyArea ||
-    (activeDetailRegion ? `${activeDetailRegion.label} detail` : "None selected yet");
+    (activeDetailRegion
+      ? `${activeDetailRegion.label} detail`
+      : "None selected yet");
 
   const filteredHotspots = useMemo(() => {
     return FULL_BODY_HOTSPOTS.filter((hotspot) => hotspot.view === view).sort(
@@ -363,7 +392,9 @@ export function BodyMap(props: FlexibleBodyMapProps) {
             <Pressable
               key={hotspot.id}
               accessibilityRole="button"
-              accessibilityLabel={`Select ${BODY_MAP_MANIFEST[hotspot.regionId].label}`}
+              accessibilityLabel={`Select ${
+                BODY_MAP_MANIFEST[hotspot.regionId].label
+              }`}
               onPress={() => handleFullBodyRegionPress(hotspot.regionId)}
               style={[
                 styles.fullBodyHotspot,
@@ -411,8 +442,8 @@ export function BodyMap(props: FlexibleBodyMapProps) {
             <View style={styles.fallbackCard}>
               <Text style={styles.fallbackTitle}>Close-up image not added yet</Text>
               <Text style={styles.fallbackText}>
-                Close-up image not added yet for {regionLabel}. Use the selection
-                buttons on the right for now.
+                Close-up image not added yet for {regionLabel}. Use the
+                selection buttons on the right for now.
               </Text>
             </View>
           )}
@@ -518,8 +549,8 @@ export function BodyMap(props: FlexibleBodyMapProps) {
           <Text style={styles.kicker}>SELECTED AREA</Text>
           <Text style={styles.selectedTitle}>{visibleSelectedLabel}</Text>
           <Text style={styles.bodyCopy}>
-            The body map helps Azul localize your question. It does not auto-run
-            analysis.
+            The body map helps Azul localize your question. It does not
+            auto-run analysis.
           </Text>
 
           <Pressable onPress={handleClearSelection} style={styles.clearButton}>
@@ -531,8 +562,8 @@ export function BodyMap(props: FlexibleBodyMapProps) {
           <View style={styles.chipCard}>
             <Text style={styles.cardTitle}>Close-Up Selection</Text>
             <Text style={styles.bodyCopy}>
-              Choose the most precise hotspot you can identify. The selected label is
-              passed back into Azul as context.
+              Choose the most precise hotspot you can identify. The selected
+              label is passed back into Azul as context.
             </Text>
 
             <View style={styles.chipWrap}>
@@ -545,7 +576,12 @@ export function BodyMap(props: FlexibleBodyMapProps) {
                     onPress={() => handleChipPress(chip)}
                     style={[styles.chip, isActive ? styles.chipActive : null]}
                   >
-                    <Text style={[styles.chipText, isActive ? styles.chipTextActive : null]}>
+                    <Text
+                      style={[
+                        styles.chipText,
+                        isActive ? styles.chipTextActive : null,
+                      ]}
+                    >
                       {chip}
                     </Text>
                   </Pressable>
@@ -557,8 +593,8 @@ export function BodyMap(props: FlexibleBodyMapProps) {
           <View style={styles.chipCard}>
             <Text style={styles.cardTitle}>Full Body Selection</Text>
             <Text style={styles.bodyCopy}>
-              Start with a broad region, then move into a close-up map for more precise
-              targeting.
+              Start with a broad region, then move into a close-up map for more
+              precise targeting.
             </Text>
           </View>
         )}
@@ -587,7 +623,10 @@ export function BodyMap(props: FlexibleBodyMapProps) {
           <View style={styles.toggleRow}>
             <Pressable
               onPress={() => setView("front")}
-              style={[styles.toggleButton, view === "front" ? styles.toggleButtonActive : null]}
+              style={[
+                styles.toggleButton,
+                view === "front" ? styles.toggleButtonActive : null,
+              ]}
             >
               <Text
                 style={[
@@ -601,7 +640,10 @@ export function BodyMap(props: FlexibleBodyMapProps) {
 
             <Pressable
               onPress={() => setView("back")}
-              style={[styles.toggleButton, view === "back" ? styles.toggleButtonActive : null]}
+              style={[
+                styles.toggleButton,
+                view === "back" ? styles.toggleButtonActive : null,
+              ]}
             >
               <Text
                 style={[
@@ -722,15 +764,16 @@ const styles = StyleSheet.create({
     lineHeight: 21,
   },
   clearButton: {
-    alignSelf: "flex-start",
-    backgroundColor: "#e9eff6",
-    borderRadius: 999,
     marginTop: 14,
+    alignSelf: "flex-start",
+    backgroundColor: "#edf2f7",
+    borderRadius: 999,
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 9,
   },
   clearButtonText: {
     color: navy,
+    fontSize: 13,
     fontWeight: "900",
   },
   chipCard: {
@@ -742,48 +785,47 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     color: navy,
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: "900",
-    marginBottom: 10,
+    marginBottom: 8,
   },
   chipWrap: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
-    marginTop: 14,
+    marginTop: 12,
   },
   chip: {
     backgroundColor: "#edf2f7",
     borderColor: lightBorder,
     borderWidth: 1,
     borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
+    paddingHorizontal: 13,
+    paddingVertical: 8,
   },
   chipActive: {
     backgroundColor: gold,
-    borderColor: gold,
+    borderColor: "#caa72e",
   },
   chipText: {
-    color: "#334155",
-    fontWeight: "800",
-    fontSize: 13,
+    color: softText,
+    fontSize: 12,
+    fontWeight: "900",
   },
   chipTextActive: {
     color: navy,
   },
   imageStage: {
-    flex: 1,
     minHeight: 540,
     alignItems: "center",
     justifyContent: "center",
-    padding: 16,
+    padding: 18,
   },
   fullBodyImageWrap: {
     position: "relative",
-    width: 380,
+    width: "100%",
+    maxWidth: 560,
     height: 520,
-    maxWidth: "96%",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -793,32 +835,31 @@ const styles = StyleSheet.create({
   },
   fullBodyHotspot: {
     position: "absolute",
-    backgroundColor: "transparent",
+    borderRadius: 999,
   },
   debugHotspot: {
-    backgroundColor: "rgba(216, 182, 55, 0.24)",
-    borderColor: gold,
+    backgroundColor: "rgba(216, 182, 55, 0.22)",
+    borderColor: "rgba(7, 43, 114, 0.35)",
     borderWidth: 1,
-    borderRadius: 12,
   },
   backButton: {
     position: "absolute",
-    left: 14,
-    top: 14,
-    zIndex: 5,
-    backgroundColor: "#dfe8f3",
+    left: 18,
+    top: 18,
+    zIndex: 3,
+    backgroundColor: "#e5edf5",
     borderRadius: 999,
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     paddingVertical: 9,
   },
   backButtonText: {
     color: navy,
+    fontSize: 12,
     fontWeight: "900",
-    fontSize: 13,
   },
   detailImageWrap: {
-    width: "78%",
-    height: "84%",
+    width: "100%",
+    height: 500,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -837,10 +878,10 @@ const styles = StyleSheet.create({
   },
   fallbackTitle: {
     color: navy,
+    fontSize: 16,
     fontWeight: "900",
-    fontSize: 18,
-    marginBottom: 8,
     textAlign: "center",
+    marginBottom: 8,
   },
   fallbackText: {
     color: softText,
@@ -857,12 +898,12 @@ const styles = StyleSheet.create({
   },
   placementBadge: {
     alignSelf: "flex-start",
-    backgroundColor: "#f7e9a7",
-    borderColor: gold,
+    backgroundColor: "#fff4bf",
+    borderColor: "#e6cf6a",
     borderWidth: 1,
     borderRadius: 999,
     paddingHorizontal: 12,
-    paddingVertical: 7,
+    paddingVertical: 5,
     marginBottom: 12,
   },
   placementBadgeText: {
@@ -873,52 +914,45 @@ const styles = StyleSheet.create({
   placementPlain: {
     color: navy,
     fontSize: 14,
-    fontWeight: "800",
     lineHeight: 21,
+    fontWeight: "900",
     marginBottom: 8,
   },
   placementTechnical: {
     color: softText,
     fontSize: 13,
-    lineHeight: 20,
-    marginBottom: 8,
+    lineHeight: 19,
+    marginBottom: 6,
   },
   placementMeta: {
     color: "#475569",
     fontSize: 12,
     fontWeight: "900",
-    marginBottom: 8,
     textTransform: "uppercase",
+    marginBottom: 6,
   },
   placementNote: {
-    color: "#7c2d12",
-    backgroundColor: "#fff7ed",
-    borderColor: "#fed7aa",
-    borderWidth: 1,
-    borderRadius: 12,
+    color: softText,
     fontSize: 12,
     lineHeight: 18,
-    marginBottom: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
   },
   placementImageWrap: {
+    marginTop: 12,
     backgroundColor: "#f8fafc",
     borderColor: lightBorder,
     borderWidth: 1,
     borderRadius: 16,
-    minHeight: 180,
-    marginTop: 12,
-    overflow: "hidden",
+    minHeight: 220,
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
   },
   placementImage: {
     width: "100%",
     height: 220,
   },
   placementFallbackCard: {
-    padding: 16,
+    padding: 18,
     alignItems: "center",
     justifyContent: "center",
   },
