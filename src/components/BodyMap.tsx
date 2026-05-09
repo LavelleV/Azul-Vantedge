@@ -43,6 +43,7 @@ import {
 
 import { getPadPlacementVisual } from "../data/padPlacementVisuals";
 import PadPlacementVisualPanel from "./PadPlacementVisualPanel";
+import PadPlacementCalibrationTool from "./PadPlacementCalibrationTool";
 
 import {
   getPadPlacementRule,
@@ -50,6 +51,10 @@ import {
 } from "../services/padPlacementRules";
 
 const SHOW_HOTSPOT_DEBUG = false;
+
+// Temporary developer tool.
+// Set this to false before final production/pilot build.
+const SHOW_PLACEMENT_CALIBRATION_TOOL = true;
 
 /**
  * LOCKED BODY-MAP IMAGE SOURCE MAP
@@ -572,50 +577,54 @@ export function BodyMap(props: FlexibleBodyMapProps) {
     : "Tap near the area that feels affected. Azul will use it as location context before you analyze.";
 
   return (
-    <View style={styles.section}>
-      <Text style={styles.kicker}>VISUAL BODY MAP</Text>
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.helper}>{helper}</Text>
+    <View style={styles.bodyMapRoot}>
+      <View style={styles.section}>
+        <Text style={styles.kicker}>VISUAL BODY MAP</Text>
+        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.helper}>{helper}</Text>
 
-      {!activeDetailRegion ? (
-        <View style={styles.toggleRow}>
-          <Pressable
-            onPress={() => setView("front")}
-            style={[styles.toggleButton, view === "front" ? styles.toggleButtonActive : null]}
-          >
-            <Text
-              style={[
-                styles.toggleText,
-                view === "front" ? styles.toggleTextActive : null,
-              ]}
+        {!activeDetailRegion ? (
+          <View style={styles.toggleRow}>
+            <Pressable
+              onPress={() => setView("front")}
+              style={[styles.toggleButton, view === "front" ? styles.toggleButtonActive : null]}
             >
-              Front
-            </Text>
-          </Pressable>
+              <Text
+                style={[
+                  styles.toggleText,
+                  view === "front" ? styles.toggleTextActive : null,
+                ]}
+              >
+                Front
+              </Text>
+            </Pressable>
 
-          <Pressable
-            onPress={() => setView("back")}
-            style={[styles.toggleButton, view === "back" ? styles.toggleButtonActive : null]}
-          >
-            <Text
-              style={[
-                styles.toggleText,
-                view === "back" ? styles.toggleTextActive : null,
-              ]}
+            <Pressable
+              onPress={() => setView("back")}
+              style={[styles.toggleButton, view === "back" ? styles.toggleButtonActive : null]}
             >
-              Back
-            </Text>
-          </Pressable>
-        </View>
-      ) : null}
+              <Text
+                style={[
+                  styles.toggleText,
+                  view === "back" ? styles.toggleTextActive : null,
+                ]}
+              >
+                Back
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
 
-      <View style={styles.mapLayout}>
-        <View style={styles.mapPanel}>
-          {activeDetailRegion ? renderDetailMap() : renderFullBodyMap()}
-        </View>
+        <View style={styles.mapLayout}>
+          <View style={styles.mapPanel}>
+            {activeDetailRegion ? renderDetailMap() : renderFullBodyMap()}
+          </View>
 
-        {renderSidePanel()}
+          {renderSidePanel()}
+        </View>
       </View>
+
+      {SHOW_PLACEMENT_CALIBRATION_TOOL ? <PadPlacementCalibrationTool /> : null}
     </View>
   );
 }
@@ -627,6 +636,9 @@ const lightBorder = "#dbe4ef";
 const softText = "#334155";
 
 const styles = StyleSheet.create({
+  bodyMapRoot: {
+    width: "100%",
+  },
   section: {
     backgroundColor: "#ffffff",
     borderRadius: 24,

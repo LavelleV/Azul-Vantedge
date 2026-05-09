@@ -100,8 +100,8 @@ export const PAD_PLACEMENT_ANCHORS: Record<string, PadPlacementAnchor> = {
     regionId: "shoulder",
     view: "front",
     imageKey: "shoulder-front",
-    x: 67,
-    y: 15,
+    x: 71,
+    y: 17,
   },
 
   // =========================

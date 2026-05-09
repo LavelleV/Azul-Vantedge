@@ -1,5 +1,12 @@
 import React from 'react';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { DeviceSelector } from '../components/DeviceSelector';
 import { ClinicalAgent } from '../components/ClinicalAgent';
@@ -9,7 +16,11 @@ import { SessionHistory, type SavedSession } from '../components/SessionHistory'
 import { ReferenceGrid } from '../components/ReferenceGrid';
 import { VibeJournal } from '../components/VibeJournal';
 import type { DeviceModel } from '../data/deviceModels';
-import type { AzulAgentResponse, UserMode, VibeJournalData } from '../services/azulAgent';
+import type {
+  AzulAgentResponse,
+  UserMode,
+  VibeJournalData,
+} from '../services/azulAgent';
 
 export function DashboardScreen({
   activeModel,
@@ -57,18 +68,25 @@ export function DashboardScreen({
   return (
     <SafeAreaView style={styles.screen}>
       <StatusBar style="light" />
+
       <View style={styles.header}>
         <Pressable style={styles.settingsButton} onPress={onOpenSettingsLegal}>
           <Text style={styles.settingsButtonLabel}>Settings / Legal</Text>
         </Pressable>
+
         <Text style={styles.eyebrow}>The Biological Edge</Text>
         <Text style={styles.title}>Azul Clinical Agent</Text>
         <Text style={styles.subtitle}>
           Guided resonance support with a polished clinical-wellness brain.
         </Text>
       </View>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
         <DeviceSelector activeModel={activeModel} onChange={setActiveModel} />
+
         <ClinicalAgent
           question={question}
           onChangeQuestion={setQuestion}
@@ -79,29 +97,34 @@ export function DashboardScreen({
           onChangeMode={setUserMode}
           onClear={onClear}
         />
+
         <ProtocolResponseCard
           response={response}
           isLoading={isAnalyzing}
+          issueText={question}
           onRequestAssessment={onRequestAssessment}
         />
+
         <BodyMap
           selectedBodyArea={selectedBodyArea}
           onSelect={(bodyArea) => {
-  const nextBodyArea = bodyArea ?? "";
+            const nextBodyArea = bodyArea ?? '';
 
-  setSelectedBodyArea(nextBodyArea);
+            setSelectedBodyArea(nextBodyArea);
 
-  if (bodyArea && !question.trim()) {
-    setQuestion(bodyArea);
-  }
-}}
+            if (bodyArea && !question.trim()) {
+              setQuestion(bodyArea);
+            }
+          }}
         />
+
         <SessionHistory
           sessions={sessions}
           onOpen={onOpenSession}
           onDelete={onDeleteSession}
           onClear={onClearHistory}
         />
+
         <ReferenceGrid
           onSelect={(value) => {
             if (!question.trim()) {
@@ -114,6 +137,7 @@ export function DashboardScreen({
             }
           }}
         />
+
         <VibeJournal vibeJournalData={vibeJournalData} onOpen={onOpenVibeLog} />
       </ScrollView>
     </SafeAreaView>
