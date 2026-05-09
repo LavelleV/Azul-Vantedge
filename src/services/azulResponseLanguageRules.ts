@@ -1,11 +1,9 @@
-import { matchProtocolPlacementStrategy } from './protocolPlacementMatcher';
+import { interpretIssueForAzul } from './azulIssueInterpreter';
 import type {
   AzulAgentInput,
   AzulAgentResponse,
   VibeJournalData,
 } from './azulAgent';
-
-const MIN_LANGUAGE_ALIGNMENT_CONFIDENCE = 35;
 
 function safeItems(items?: string[] | null): string[] {
   return Array.isArray(items) ? items.filter(Boolean) : [];
@@ -30,15 +28,49 @@ function uniqueItems(items: string[]): string[] {
   });
 }
 
+const GENERIC_STRATEGY_SUFFIX_PATTERN =
+  /\s+(pattern|support|pathway|protocol|plan|strategy)$/i;
+
 function getReadablePatternName(strategyLabel: string): string {
-  return strategyLabel.replace(/\s+pattern$/i, '').trim();
+  let readablePattern = strategyLabel.trim();
+  let previousValue = '';
+
+  while (readablePattern && readablePattern !== previousValue) {
+    previousValue = readablePattern;
+    readablePattern = readablePattern
+      .replace(GENERIC_STRATEGY_SUFFIX_PATTERN, '')
+      .trim();
+  }
+
+  return readablePattern || strategyLabel.trim();
 }
 
-function buildAlignedClinicalRead(strategyLabel: string): string[] {
+function buildAlignedClinicalRead({
+  strategyLabel,
+  confidenceLevel,
+  userLanguageStyle,
+}: {
+  strategyLabel: string;
+  confidenceLevel: 'high' | 'medium';
+  userLanguageStyle: 'client' | 'practitioner' | 'mixed';
+}): string[] {
   const readablePattern = getReadablePatternName(strategyLabel).toLowerCase();
 
+  const opening =
+    confidenceLevel === 'high'
+      ? `This sounds like a ${readablePattern} support pattern based on the issue you described.`
+      : `This sounds closest to a ${readablePattern} support pattern based on the issue you described.`;
+
+  const styleLine =
+    userLanguageStyle === 'practitioner'
+      ? 'Practitioner-style wording was detected, so Azul is preserving the technical pattern while keeping the user-facing instructions clear.'
+      : userLanguageStyle === 'mixed'
+        ? 'The wording includes both client-style and technical clues, so Azul is using the useful placement signals without over-interpreting the issue.'
+        : 'Azul is using the clearest client-described pattern without over-analyzing the wording.';
+
   return [
-    `This sounds like a ${readablePattern} support pattern based on the issue you described.`,
+    opening,
+    styleLine,
     'This does not diagnose the issue. It keeps Azul focused on the specific pattern first, then uses the body area and device protocol as support context.',
   ];
 }
@@ -121,6 +153,56 @@ function buildAlignedEscalation(
   ]);
 }
 
+function buildUnclearOrBroadResponse({
+  input,
+  response,
+  clarificationPrompt,
+}: {
+  input: AzulAgentInput;
+  response: AzulAgentResponse;
+  clarificationPrompt: string | null;
+}): AzulAgentResponse {
+  return {
+    ...response,
+    clinicalRead: [
+      'This input is broad or unclear, so Azul should not force it into a narrow placement pattern.',
+      clarificationPrompt ??
+        'Add one clear detail about the exact area, movement, sensation, or pathway so Azul can guide placement more accurately.',
+      'This does not diagnose the issue. It keeps the first pass conservative until the user gives a clearer placement signal.',
+    ],
+    whyThisPlacement: [
+      'Because the wording is not specific enough, Azul is keeping the guidance broad instead of over-matching to a detailed strategy.',
+      'The goal is to avoid guessing when the user has not given enough detail.',
+    ],
+    sessionTips: uniqueItems([
+      'Start conservatively and keep the session comfortable.',
+      'Add one detail before relying on a precise pad-placement visual.',
+      `Latest Vibe pattern: ${summarizeVibe(input.vibeJournalData)}.`,
+      ...safeItems(response.sessionTips),
+    ]),
+  };
+}
+
+function buildRedFlagResponse(response: AzulAgentResponse): AzulAgentResponse {
+  return {
+    ...response,
+    clinicalRead: [
+      'This input includes wording that may need medical or professional review, so Azul should not treat it like a normal self-guided support case.',
+      'Use the guidance conservatively and prioritize safety before protocol selection or pad placement.',
+      'This does not diagnose the issue or replace medical care.',
+    ],
+    whyThisPlacement: [
+      'When red-flag wording is present, safety comes before narrowing the issue into a protocol pattern.',
+    ],
+    escalation: uniqueItems([
+      ...safeItems(response.escalation),
+      'Seek appropriate medical evaluation immediately if symptoms are severe, sudden, neurological, worsening, or unusual.',
+      'Request Clinical Assessment with Lavelle if you are unsure whether this is appropriate for self-guided support.',
+    ]),
+    recommendAssessment: true,
+  };
+}
+
 export function alignAzulResponseLanguageToMatchedStrategy({
   input,
   response,
@@ -136,7 +218,7 @@ export function alignAzulResponseLanguageToMatchedStrategy({
   const aftercare = safeItems(response.aftercare);
   const escalation = safeItems(response.escalation);
 
-  const match = matchProtocolPlacementStrategy({
+  const interpretation = interpretIssueForAzul({
     issueText: input.userQuestion,
     padPlacementText: padPlacement.join(' '),
     technicalAreaText: padPlacement.join(' '),
@@ -154,15 +236,28 @@ export function alignAzulResponseLanguageToMatchedStrategy({
     ].join(' '),
   });
 
-  if (!match.strategy || match.confidence < MIN_LANGUAGE_ALIGNMENT_CONFIDENCE) {
-    return response;
+  if (interpretation.redFlag) {
+    return buildRedFlagResponse(response);
   }
 
-  const strategy = match.strategy;
+  if (!interpretation.shouldUseMatchedStrategy || !interpretation.match.strategy) {
+    return buildUnclearOrBroadResponse({
+      input,
+      response,
+      clarificationPrompt: interpretation.clarificationPrompt,
+    });
+  }
+
+  const strategy = interpretation.match.strategy;
 
   return {
     ...response,
-    clinicalRead: buildAlignedClinicalRead(strategy.label),
+    clinicalRead: buildAlignedClinicalRead({
+      strategyLabel: strategy.label,
+      confidenceLevel:
+        interpretation.confidenceLevel === 'medium' ? 'medium' : 'high',
+      userLanguageStyle: interpretation.userLanguageStyle,
+    }),
     bestStartingProtocol: uniqueItems([
       `Pattern focus: ${strategy.label}.`,
       ...protocolPlan,

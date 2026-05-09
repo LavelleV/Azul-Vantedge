@@ -28,7 +28,7 @@ import { getPadPlacementVisual } from "../data/padPlacementVisuals";
 import PadPlacementVisualPanel from "./PadPlacementVisualPanel";
 
 import type { AzulAgentResponse } from "../services/azulAgent";
-import { matchProtocolPlacementStrategy } from "../services/protocolPlacementMatcher";
+import { interpretIssueForAzul } from "../services/azulIssueInterpreter";
 
 type StrategyVisualTarget = {
   regionId: StableBodyRegionId;
@@ -166,7 +166,7 @@ function MatchedPlacementVisual({
   response: AzulAgentResponse;
   issueText?: string | null;
 }) {
-  const match = useMemo(() => {
+  const interpretation = useMemo(() => {
     const clinicalRead = safeItems(response.clinicalRead);
     const protocolPlan = safeItems(response.bestStartingProtocol);
     const padPlacement = safeItems(response.padPlacement);
@@ -175,7 +175,7 @@ function MatchedPlacementVisual({
     const aftercare = safeItems(response.aftercare);
     const escalation = safeItems(response.escalation);
 
-    return matchProtocolPlacementStrategy({
+    return interpretIssueForAzul({
       issueText,
       padPlacementText: padPlacement.join(" "),
       technicalAreaText: padPlacement.join(" "),
@@ -192,13 +192,49 @@ function MatchedPlacementVisual({
     });
   }, [response, issueText]);
 
+  const match = interpretation.match;
+
   const visual = useMemo(
     () => getStrategyVisual(match.strategyId),
     [match.strategyId]
   );
 
+  if (interpretation.redFlag) {
+    return (
+      <View style={styles.matchedCard}>
+        <Text style={styles.matchedEyebrow}>Placement Safety Check</Text>
+        <Text style={styles.matchedTitle}>Professional review recommended</Text>
+        <Text style={styles.matchedPlain}>
+          Azul detected wording that should not be treated like a normal self-guided placement case.
+        </Text>
+        <Text style={styles.matchedTechnical}>
+          Use conservative support only and prioritize medical or professional guidance when symptoms are severe, sudden, neurological, worsening, or unusual.
+        </Text>
+      </View>
+    );
+  }
+
   if (!match.strategy) {
     return null;
+  }
+
+  if (!interpretation.shouldUseMatchedStrategy) {
+    return (
+      <View style={styles.matchedCard}>
+        <Text style={styles.matchedEyebrow}>Placement Confidence Check</Text>
+        <Text style={styles.matchedTitle}>Needs one clearer detail</Text>
+        <Text style={styles.matchedMeta}>
+          Confidence: {interpretation.confidenceScore}% • {interpretation.confidenceLevel}
+        </Text>
+        <Text style={styles.matchedPlain}>
+          Azul found a possible direction, but the input is broad or unclear enough that it should not force a precise visual strategy yet.
+        </Text>
+        <Text style={styles.matchedTechnical}>
+          {interpretation.clarificationPrompt ??
+            "Add the exact area, sensation, movement trigger, or pathway before relying on a precise pad-placement visual."}
+        </Text>
+      </View>
+    );
   }
 
   return (
@@ -207,7 +243,7 @@ function MatchedPlacementVisual({
       <Text style={styles.matchedTitle}>{match.strategy.label}</Text>
 
       <Text style={styles.matchedMeta}>
-        Match confidence: {match.confidence}%
+        Match confidence: {interpretation.confidenceScore}% • {interpretation.confidenceLevel}
       </Text>
 
       <Text style={styles.matchedPlain}>
