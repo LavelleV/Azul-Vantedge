@@ -60,7 +60,7 @@ const SHOW_HOTSPOT_DEBUG = false;
 
 // Temporary developer tool.
 // Set this to false before final production/pilot build.
-const SHOW_PLACEMENT_CALIBRATION_TOOL = true;
+const SHOW_PLACEMENT_CALIBRATION_TOOL = false;
 
 /**
  * LOCKED BODY-MAP IMAGE SOURCE MAP
