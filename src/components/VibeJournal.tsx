@@ -6,14 +6,26 @@ function MetricRow({
   label,
   before,
   after,
+  direction,
 }: {
   label: string;
   before: number;
   after: number;
+  direction: 'lower-is-better' | 'higher-is-better';
 }) {
+  const delta =
+    direction === 'lower-is-better' ? before - after : after - before;
+
+  const resultLabel =
+    delta > 0 ? 'Improved' : delta < 0 ? 'Needs review' : 'Same';
+
   return (
     <View style={styles.metricRow}>
-      <Text style={styles.metricLabel}>{label}</Text>
+      <View style={styles.metricTextColumn}>
+        <Text style={styles.metricLabel}>{label}</Text>
+        <Text style={styles.metricResult}>{resultLabel}</Text>
+      </View>
+
       <View style={styles.metricValues}>
         <Text style={styles.metricValue}>{before}</Text>
         <Text style={styles.metricArrow}>→</Text>
@@ -23,7 +35,12 @@ function MetricRow({
   );
 }
 
-function buildInsight(label: string, delta: number, positiveVerb: string, negativeVerb: string) {
+function buildInsight(
+  label: string,
+  delta: number,
+  positiveVerb: string,
+  negativeVerb: string
+) {
   if (delta === 0) {
     return `${label} stayed the same.`;
   }
@@ -51,51 +68,48 @@ export function VibeJournal({
       <Text style={styles.eyebrow}>Vibe Journal</Text>
       <Text style={styles.title}>Before and after protocol tracker</Text>
       <Text style={styles.helper}>
-        Log how you feel before the session, then compare it to how you feel after the protocol.
+        Log how you feel before a session, then log how you feel after. Azul
+        will use the latest saved Vibe entry as session context.
       </Text>
 
       <View style={styles.summaryGrid}>
         <View style={styles.phaseCard}>
-          <Text style={styles.phaseTitle}>Before Session</Text>
+          <Text style={styles.phaseTitle}>Latest saved snapshot</Text>
+
           <MetricRow
             label="Pain Level"
             before={vibeJournalData.painBefore}
             after={vibeJournalData.painAfter}
+            direction="lower-is-better"
           />
+
           <MetricRow
             label="Focus / Clarity"
             before={vibeJournalData.focusBefore}
             after={vibeJournalData.focusAfter}
+            direction="higher-is-better"
           />
+
           <MetricRow
             label="Stress / Tension"
             before={vibeJournalData.stressBefore}
             after={vibeJournalData.stressAfter}
+            direction="lower-is-better"
           />
-        </View>
-
-        <View style={styles.phaseCard}>
-          <Text style={styles.phaseTitle}>After Session</Text>
-          <View style={styles.afterSummaryRow}>
-            <Text style={styles.afterSummaryLabel}>Pain Level</Text>
-            <Text style={styles.afterSummaryValue}>{vibeJournalData.painAfter}</Text>
-          </View>
-          <View style={styles.afterSummaryRow}>
-            <Text style={styles.afterSummaryLabel}>Focus / Clarity</Text>
-            <Text style={styles.afterSummaryValue}>{vibeJournalData.focusAfter}</Text>
-          </View>
-          <View style={styles.afterSummaryRow}>
-            <Text style={styles.afterSummaryLabel}>Stress / Tension</Text>
-            <Text style={styles.afterSummaryValue}>{vibeJournalData.stressAfter}</Text>
-          </View>
         </View>
       </View>
 
       <View style={styles.insightCard}>
         <Text style={styles.insightTitle}>Quick interpretation</Text>
-        <Text style={styles.insightText}>{buildInsight('Pain', painDelta, 'improved', 'increased')}</Text>
-        <Text style={styles.insightText}>{buildInsight('Focus', focusDelta, 'improved', 'dropped')}</Text>
-        <Text style={styles.insightText}>{buildInsight('Stress', stressDelta, 'reduced', 'increased')}</Text>
+        <Text style={styles.insightText}>
+          {buildInsight('Pain', painDelta, 'improved', 'increased')}
+        </Text>
+        <Text style={styles.insightText}>
+          {buildInsight('Focus', focusDelta, 'improved', 'dropped')}
+        </Text>
+        <Text style={styles.insightText}>
+          {buildInsight('Stress', stressDelta, 'reduced', 'increased')}
+        </Text>
       </View>
 
       <Pressable style={styles.button} onPress={onOpen}>
@@ -148,16 +162,31 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   metricRow: {
+    minHeight: 52,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 35, 102, 0.06)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
   },
-  metricLabel: {
+  metricTextColumn: {
     flex: 1,
+  },
+  metricLabel: {
     color: '#474747',
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
+  },
+  metricResult: {
+    color: '#5F6C84',
+    fontSize: 12,
+    fontWeight: '700',
+    marginTop: 2,
   },
   metricValues: {
     flexDirection: 'row',
@@ -175,27 +204,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   metricValueAfter: {
-    color: '#002366',
-    fontSize: 15,
-    fontWeight: '800',
-  },
-  afterSummaryRow: {
-    minHeight: 42,
-    borderRadius: 14,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 35, 102, 0.06)',
-    paddingHorizontal: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  afterSummaryLabel: {
-    color: '#474747',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  afterSummaryValue: {
     color: '#002366',
     fontSize: 15,
     fontWeight: '800',
@@ -221,12 +229,12 @@ const styles = StyleSheet.create({
   button: {
     minHeight: 48,
     borderRadius: 16,
-    backgroundColor: '#F0F4F9',
+    backgroundColor: '#002366',
     alignItems: 'center',
     justifyContent: 'center',
   },
   buttonLabel: {
-    color: '#002366',
+    color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '800',
   },

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Linking, Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { OnboardingScreen } from './src/screens/OnboardingScreen';
 import { DisclaimerScreen } from './src/screens/DisclaimerScreen';
 import { DashboardScreen } from './src/screens/DashboardScreen';
@@ -19,6 +19,13 @@ import {
   loadDisclaimerAcknowledgment,
   saveDisclaimerAcknowledgment,
 } from './src/data/disclaimerStorage';
+import {
+  VIBE_JOURNAL_MAX_ENTRIES,
+  clearVibeJournalEntriesStorage,
+  loadVibeJournalEntries,
+  saveVibeJournalEntries,
+  type SavedVibeJournalEntry,
+} from './src/data/vibeJournalStorage';
 import { deviceModels, type DeviceModel } from './src/data/deviceModels';
 import {
   generateAzulResponse,
@@ -30,12 +37,12 @@ import {
 const Stack = createNativeStackNavigator();
 
 const defaultVibeJournal: VibeJournalData = {
-  painBefore: 40,
-  painAfter: 18,
-  focusBefore: 52,
-  focusAfter: 78,
-  stressBefore: 63,
-  stressAfter: 28,
+  painBefore: 50,
+  painAfter: 50,
+  focusBefore: 50,
+  focusAfter: 50,
+  stressBefore: 50,
+  stressAfter: 50,
 };
 
 const defaultResponse: AzulAgentResponse = {
@@ -85,29 +92,265 @@ type RootStackParamList = {
   SettingsLegal: undefined;
 };
 
+function clampVibeNumber(value: string): number {
+  const parsed = Number.parseInt(value, 10);
+
+  if (!Number.isFinite(parsed)) {
+    return 0;
+  }
+
+  return Math.max(0, Math.min(100, parsed));
+}
+
+function formatVibeDate(value: string): string {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return 'Saved entry';
+  }
+
+  return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], {
+    hour: 'numeric',
+    minute: '2-digit',
+  })}`;
+}
+
+function VibeMetricInput({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <View style={{ gap: 6, flex: 1, minWidth: 130 }}>
+      <Text style={styles.modalText}>{label}</Text>
+      <TextInput
+        value={value}
+        onChangeText={(nextValue) => onChange(nextValue.replace(/[^0-9]/g, '').slice(0, 3))}
+        keyboardType="number-pad"
+        placeholder="0-100"
+        style={{
+          minHeight: 42,
+          borderRadius: 12,
+          borderWidth: 1,
+          borderColor: 'rgba(0,35,102,0.12)',
+          paddingHorizontal: 12,
+          color: '#002366',
+          fontWeight: '800',
+          backgroundColor: '#FFFFFF',
+        }}
+      />
+    </View>
+  );
+}
+
 function VibeLogModal({
   visible,
   onClose,
   vibeJournalData,
+  entries,
+  onSave,
+  onDelete,
+  onClearAll,
+  currentQuestion,
+  selectedBodyArea,
+  activeDeviceModel,
+  userMode,
 }: {
   visible: boolean;
   onClose: () => void;
   vibeJournalData: VibeJournalData;
+  entries: SavedVibeJournalEntry[];
+  onSave: (entry: SavedVibeJournalEntry) => void;
+  onDelete: (entryId: string) => void;
+  onClearAll: () => void;
+  currentQuestion: string;
+  selectedBodyArea?: string;
+  activeDeviceModel: DeviceModel;
+  userMode: UserMode;
 }) {
+  const [painBefore, setPainBefore] = useState(String(vibeJournalData.painBefore));
+  const [painAfter, setPainAfter] = useState(String(vibeJournalData.painAfter));
+  const [focusBefore, setFocusBefore] = useState(String(vibeJournalData.focusBefore));
+  const [focusAfter, setFocusAfter] = useState(String(vibeJournalData.focusAfter));
+  const [stressBefore, setStressBefore] = useState(String(vibeJournalData.stressBefore));
+  const [stressAfter, setStressAfter] = useState(String(vibeJournalData.stressAfter));
+  const [note, setNote] = useState('');
+
+  useEffect(() => {
+    if (!visible) {
+      return;
+    }
+
+    setPainBefore(String(vibeJournalData.painBefore));
+    setPainAfter(String(vibeJournalData.painAfter));
+    setFocusBefore(String(vibeJournalData.focusBefore));
+    setFocusAfter(String(vibeJournalData.focusAfter));
+    setStressBefore(String(vibeJournalData.stressBefore));
+    setStressAfter(String(vibeJournalData.stressAfter));
+    setNote('');
+  }, [visible, vibeJournalData]);
+
+  const handleSave = () => {
+    const nextEntry: SavedVibeJournalEntry = {
+      id: `${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      painBefore: clampVibeNumber(painBefore),
+      painAfter: clampVibeNumber(painAfter),
+      focusBefore: clampVibeNumber(focusBefore),
+      focusAfter: clampVibeNumber(focusAfter),
+      stressBefore: clampVibeNumber(stressBefore),
+      stressAfter: clampVibeNumber(stressAfter),
+      note: note.trim() || undefined,
+      question: currentQuestion.trim() || undefined,
+      selectedBodyArea,
+      activeDeviceModel,
+      userMode,
+    };
+
+    onSave(nextEntry);
+    onClose();
+  };
+
   return (
     <Modal visible={visible} transparent animationType="slide">
       <View style={styles.modalBackdrop}>
         <View style={styles.modalCard}>
           <Text style={styles.modalEyebrow}>Vibe Journal</Text>
-          <Text style={styles.modalTitle}>Current baseline snapshot</Text>
+          <Text style={styles.modalTitle}>Log before and after session</Text>
+
           <ScrollView showsVerticalScrollIndicator={false}>
-            <Text style={styles.modalText}>Pain: {vibeJournalData.painBefore} before / {vibeJournalData.painAfter} after</Text>
-            <Text style={styles.modalText}>Focus: {vibeJournalData.focusBefore} before / {vibeJournalData.focusAfter} after</Text>
-            <Text style={styles.modalText}>Stress: {vibeJournalData.stressBefore} before / {vibeJournalData.stressAfter} after</Text>
             <Text style={styles.modalHint}>
-              This is still a placeholder logging surface. The app architecture now supports passing Vibe Journal data into the AI service layer for richer context.
+              Enter 0-100 values. For pain and stress, lower after-session values are better.
+              For focus, higher after-session values are better.
             </Text>
+
+            <View style={{ gap: 14, marginTop: 14 }}>
+              <View
+                style={{
+                  borderRadius: 18,
+                  backgroundColor: '#F8FAFD',
+                  borderWidth: 1,
+                  borderColor: 'rgba(0,35,102,0.08)',
+                  padding: 14,
+                  gap: 12,
+                }}
+              >
+                <Text style={styles.modalTitle}>Before Session</Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+                  <VibeMetricInput label="Pain" value={painBefore} onChange={setPainBefore} />
+                  <VibeMetricInput label="Focus" value={focusBefore} onChange={setFocusBefore} />
+                  <VibeMetricInput label="Stress" value={stressBefore} onChange={setStressBefore} />
+                </View>
+              </View>
+
+              <View
+                style={{
+                  borderRadius: 18,
+                  backgroundColor: '#F8FAFD',
+                  borderWidth: 1,
+                  borderColor: 'rgba(0,35,102,0.08)',
+                  padding: 14,
+                  gap: 12,
+                }}
+              >
+                <Text style={styles.modalTitle}>After Session</Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+                  <VibeMetricInput label="Pain" value={painAfter} onChange={setPainAfter} />
+                  <VibeMetricInput label="Focus" value={focusAfter} onChange={setFocusAfter} />
+                  <VibeMetricInput label="Stress" value={stressAfter} onChange={setStressAfter} />
+                </View>
+              </View>
+
+              <View style={{ gap: 6 }}>
+                <Text style={styles.modalText}>Optional note</Text>
+                <TextInput
+                  value={note}
+                  onChangeText={setNote}
+                  multiline
+                  placeholder="Example: SI joint felt better after walking. Stress dropped quickly."
+                  style={{
+                    minHeight: 88,
+                    borderRadius: 14,
+                    borderWidth: 1,
+                    borderColor: 'rgba(0,35,102,0.12)',
+                    paddingHorizontal: 12,
+                    paddingVertical: 10,
+                    color: '#002366',
+                    backgroundColor: '#FFFFFF',
+                    textAlignVertical: 'top',
+                  }}
+                />
+              </View>
+
+              <Pressable style={styles.modalButton} onPress={handleSave}>
+                <Text style={styles.modalButtonLabel}>Save Vibe Entry</Text>
+              </Pressable>
+
+              <View
+                style={{
+                  borderRadius: 18,
+                  backgroundColor: '#FFFFFF',
+                  borderWidth: 1,
+                  borderColor: 'rgba(0,35,102,0.08)',
+                  padding: 14,
+                  gap: 10,
+                }}
+              >
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: 12,
+                  }}
+                >
+                  <Text style={styles.modalTitle}>Saved Vibe History</Text>
+                  {entries.length ? (
+                    <Pressable onPress={onClearAll}>
+                      <Text style={{ color: '#8B1E1E', fontWeight: '900' }}>Clear All</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+
+                {entries.length ? (
+                  entries.slice(0, VIBE_JOURNAL_MAX_ENTRIES).map((entry) => (
+                    <View
+                      key={entry.id}
+                      style={{
+                        borderTopWidth: 1,
+                        borderTopColor: 'rgba(0,35,102,0.08)',
+                        paddingTop: 10,
+                        gap: 5,
+                      }}
+                    >
+                      <Text style={styles.modalText}>
+                        {formatVibeDate(entry.createdAt)}
+                      </Text>
+                      <Text style={styles.modalHint}>
+                        Pain {entry.painBefore} → {entry.painAfter} | Focus {entry.focusBefore} → {entry.focusAfter} | Stress {entry.stressBefore} → {entry.stressAfter}
+                      </Text>
+                      {entry.question ? (
+                        <Text style={styles.modalHint}>Question: {entry.question}</Text>
+                      ) : null}
+                      {entry.note ? (
+                        <Text style={styles.modalHint}>Note: {entry.note}</Text>
+                      ) : null}
+                      <Pressable onPress={() => onDelete(entry.id)}>
+                        <Text style={{ color: '#8B1E1E', fontWeight: '900' }}>Delete Entry</Text>
+                      </Pressable>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={styles.modalHint}>No saved Vibe entries yet.</Text>
+                )}
+              </View>
+            </View>
           </ScrollView>
+
           <Pressable style={styles.modalButton} onPress={onClose}>
             <Text style={styles.modalButtonLabel}>Close</Text>
           </Pressable>
@@ -116,6 +359,7 @@ function VibeLogModal({
     </Modal>
   );
 }
+
 
 function SavedSessionModal({
   session,
@@ -165,7 +409,8 @@ export default function App() {
   const [response, setResponse] = useState<AzulAgentResponse>(defaultResponse);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [vibeVisible, setVibeVisible] = useState(false);
-  const [vibeJournalData] = useState<VibeJournalData>(defaultVibeJournal);
+  const [vibeJournalData, setVibeJournalData] = useState<VibeJournalData>(defaultVibeJournal);
+  const [vibeJournalEntries, setVibeJournalEntries] = useState<SavedVibeJournalEntry[]>([]);
   const [savedSessions, setSavedSessions] = useState<SavedSession[]>([]);
   const [selectedSession, setSelectedSession] = useState<SavedSession | null>(null);
   const [hasAcknowledgedDisclaimer, setHasAcknowledgedDisclaimer] = useState(false);
@@ -173,8 +418,23 @@ export default function App() {
   useEffect(() => {
     void (async () => {
       const storedSessions = await loadSavedSessions();
+      const storedVibeEntries = await loadVibeJournalEntries();
       const disclaimerAcknowledged = await loadDisclaimerAcknowledgment();
+
       setSavedSessions(storedSessions);
+      setVibeJournalEntries(storedVibeEntries);
+
+      if (storedVibeEntries[0]) {
+        setVibeJournalData({
+          painBefore: storedVibeEntries[0].painBefore,
+          painAfter: storedVibeEntries[0].painAfter,
+          focusBefore: storedVibeEntries[0].focusBefore,
+          focusAfter: storedVibeEntries[0].focusAfter,
+          stressBefore: storedVibeEntries[0].stressBefore,
+          stressAfter: storedVibeEntries[0].stressAfter,
+        });
+      }
+
       setHasAcknowledgedDisclaimer(disclaimerAcknowledged);
     })();
   }, []);
@@ -221,6 +481,54 @@ export default function App() {
     setSelectedBodyArea(undefined);
     setResponse(defaultResponse);
     setIsAnalyzing(false);
+  };
+
+
+  const handleSaveVibeEntry = (entry: SavedVibeJournalEntry) => {
+    setVibeJournalData({
+      painBefore: entry.painBefore,
+      painAfter: entry.painAfter,
+      focusBefore: entry.focusBefore,
+      focusAfter: entry.focusAfter,
+      stressBefore: entry.stressBefore,
+      stressAfter: entry.stressAfter,
+    });
+
+    setVibeJournalEntries((current) => {
+      const nextEntries = [entry, ...current].slice(0, VIBE_JOURNAL_MAX_ENTRIES);
+      void saveVibeJournalEntries(nextEntries);
+      return nextEntries;
+    });
+  };
+
+  const handleDeleteVibeEntry = (entryId: string) => {
+    setVibeJournalEntries((current) => {
+      const nextEntries = current.filter((entry) => entry.id !== entryId);
+      void saveVibeJournalEntries(nextEntries);
+
+      const latestEntry = nextEntries[0];
+
+      if (latestEntry) {
+        setVibeJournalData({
+          painBefore: latestEntry.painBefore,
+          painAfter: latestEntry.painAfter,
+          focusBefore: latestEntry.focusBefore,
+          focusAfter: latestEntry.focusAfter,
+          stressBefore: latestEntry.stressBefore,
+          stressAfter: latestEntry.stressAfter,
+        });
+      } else {
+        setVibeJournalData(defaultVibeJournal);
+      }
+
+      return nextEntries;
+    });
+  };
+
+  const handleClearAllVibeEntries = () => {
+    setVibeJournalEntries([]);
+    setVibeJournalData(defaultVibeJournal);
+    void clearVibeJournalEntriesStorage();
   };
 
   const handleRequestAssessment = async () => {
@@ -275,6 +583,14 @@ export default function App() {
         visible={vibeVisible}
         onClose={() => setVibeVisible(false)}
         vibeJournalData={vibeJournalData}
+        entries={vibeJournalEntries}
+        onSave={handleSaveVibeEntry}
+        onDelete={handleDeleteVibeEntry}
+        onClearAll={handleClearAllVibeEntries}
+        currentQuestion={question}
+        selectedBodyArea={selectedBodyArea}
+        activeDeviceModel={activeModel}
+        userMode={userMode}
       />
       <SavedSessionModal
         session={selectedSession}
