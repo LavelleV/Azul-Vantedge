@@ -439,10 +439,15 @@ export default function App() {
     })();
   }, []);
 
-  const handleAnalyze = async () => {
-    const userQuestion = question.trim();
+  const handleAnalyze = async (overrideQuestion?: string) => {
+    const userQuestion = (overrideQuestion ?? question).trim();
+
     if (!userQuestion || isAnalyzing) {
       return;
+    }
+
+    if (overrideQuestion !== undefined) {
+      setQuestion(userQuestion);
     }
 
     setResponse(defaultResponse);

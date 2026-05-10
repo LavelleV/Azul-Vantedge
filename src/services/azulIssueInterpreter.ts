@@ -1,4 +1,8 @@
 import { containsRedFlag } from '../data/safetyRules';
+import {
+  buildClarificationPromptForIssue,
+  getClarificationOptionsForIssue,
+} from '../data/bodyAreaClarificationOptions';
 import type { StableBodyRegionId } from '../data/bodyMapRegions';
 import {
   matchProtocolPlacementStrategy,
@@ -32,6 +36,7 @@ export type AzulIssueInterpretation = {
   isConfusingInput: boolean;
   redFlag: boolean;
   clarificationPrompt: string | null;
+  clarificationOptions: string[];
   match: ProtocolPlacementMatchResult;
   reasons: string[];
 };
@@ -262,27 +267,7 @@ function isBroadOnlyInput(normalizedIssueText: string): boolean {
 }
 
 function buildClarificationPrompt(normalizedIssueText: string): string {
-  if (hasAny(normalizedIssueText, ['foot', 'ankle', 'toe'])) {
-    return 'For better placement, identify whether the main area is heel, arch, ball of foot, toes, ankle, Achilles, swelling, or nerve-type sensation.';
-  }
-
-  if (hasAny(normalizedIssueText, ['shoulder', 'neck'])) {
-    return 'For better placement, identify whether the main area is front shoulder, top shoulder, rear shoulder, rotator cuff, shoulder blade, upper trap, or neck-to-shoulder tension.';
-  }
-
-  if (hasAny(normalizedIssueText, ['knee'])) {
-    return 'For better placement, identify whether the main area is kneecap, above knee, below knee, inside knee, outside knee, or behind the knee.';
-  }
-
-  if (hasAny(normalizedIssueText, ['back', 'low back', 'hip', 'glute', 'butt'])) {
-    return 'For better placement, identify whether the main area is low-back center, SI joint, sacrum, outer hip, front hip, glute, piriformis, or pain traveling down the leg.';
-  }
-
-  if (hasAny(normalizedIssueText, ['head', 'face', 'jaw', 'neck'])) {
-    return 'For better placement, identify whether the main area is forehead, temple, sinus, jaw/TMJ, back of neck, or base of skull.';
-  }
-
-  return 'For better placement, add one clear detail: main body area, exact sore spot, movement that triggers it, or whether it feels like pain, tightness, swelling, nerve sensation, or stress.';
+  return buildClarificationPromptForIssue(normalizedIssueText);
 }
 
 function calculateAdjustedConfidence({
@@ -390,6 +375,10 @@ export function interpretIssueForAzul(
     ? buildClarificationPrompt(normalizedIssueText)
     : null;
 
+  const clarificationOptions = shouldAskForClarification
+    ? getClarificationOptionsForIssue(normalizedIssueText)
+    : [];
+
   return {
     normalizedIssueText,
     userLanguageStyle,
@@ -401,6 +390,7 @@ export function interpretIssueForAzul(
     isConfusingInput,
     redFlag,
     clarificationPrompt,
+    clarificationOptions,
     match,
     reasons: [
       ...adjusted.reasons,

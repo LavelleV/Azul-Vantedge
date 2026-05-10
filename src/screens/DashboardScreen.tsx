@@ -52,7 +52,7 @@ export function DashboardScreen({
   setQuestion: (value: string) => void;
   selectedBodyArea?: string;
   setSelectedBodyArea: (value: string) => void;
-  onAnalyze: () => void;
+  onAnalyze: (overrideQuestion?: string) => void;
   onClear: () => void;
   response: AzulAgentResponse;
   isAnalyzing: boolean;
@@ -65,6 +65,17 @@ export function DashboardScreen({
   onClearHistory: () => void;
   onOpenSettingsLegal: () => void;
 }) {
+  const handleClarificationOptionSelect = (option: string) => {
+    const trimmedQuestion = question.trim();
+    const refinedQuestion = trimmedQuestion
+      ? `${trimmedQuestion} — ${option}`
+      : option;
+
+    setQuestion(refinedQuestion);
+    setSelectedBodyArea(option);
+    onAnalyze(refinedQuestion);
+  };
+
   return (
     <SafeAreaView style={styles.screen}>
       <StatusBar style="light" />
@@ -103,6 +114,7 @@ export function DashboardScreen({
           isLoading={isAnalyzing}
           issueText={question}
           onRequestAssessment={onRequestAssessment}
+          onClarificationOptionSelect={handleClarificationOptionSelect}
         />
 
         <BodyMap
