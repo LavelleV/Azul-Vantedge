@@ -28,12 +28,16 @@ export function DashboardScreen({
   userMode,
   setUserMode,
   question,
+  analyzedQuestion,
   setQuestion,
   selectedBodyArea,
   setSelectedBodyArea,
+  onContextInteraction,
   onAnalyze,
   onClear,
   response,
+  guidanceStale,
+  staleMessage,
   isAnalyzing,
   vibeJournalData,
   onOpenVibeLog,
@@ -49,12 +53,16 @@ export function DashboardScreen({
   userMode: UserMode;
   setUserMode: (mode: UserMode) => void;
   question: string;
+  analyzedQuestion: string;
   setQuestion: (value: string) => void;
   selectedBodyArea?: string;
   setSelectedBodyArea: (value: string) => void;
+  onContextInteraction: () => void;
   onAnalyze: (overrideQuestion?: string) => void;
   onClear: () => void;
   response: AzulAgentResponse;
+  guidanceStale: boolean;
+  staleMessage: string;
   isAnalyzing: boolean;
   vibeJournalData: VibeJournalData;
   onOpenVibeLog: () => void;
@@ -88,7 +96,7 @@ export function DashboardScreen({
         <Text style={styles.eyebrow}>The Biological Edge</Text>
         <Text style={styles.title}>Azul Clinical Agent</Text>
         <Text style={styles.subtitle}>
-          Guided resonance support with a polished clinical-wellness brain.
+          Clear support for protocol selection, pad placement, and session tracking.
         </Text>
       </View>
 
@@ -109,23 +117,31 @@ export function DashboardScreen({
           onClear={onClear}
         />
 
-        <ProtocolResponseCard
-          response={response}
-          isLoading={isAnalyzing}
-          issueText={question}
-          onRequestAssessment={onRequestAssessment}
-          onClarificationOptionSelect={handleClarificationOptionSelect}
-        />
+        {guidanceStale ? (
+          <View style={styles.staleCard}>
+            <Text style={styles.staleEyebrow}>Guidance Stale</Text>
+            <Text style={styles.staleText}>{staleMessage}</Text>
+          </View>
+        ) : (
+          <ProtocolResponseCard
+            response={response}
+            isLoading={isAnalyzing}
+            issueText={analyzedQuestion}
+            onRequestAssessment={onRequestAssessment}
+            onClarificationOptionSelect={handleClarificationOptionSelect}
+          />
+        )}
 
         <BodyMap
           selectedBodyArea={selectedBodyArea}
+          onContextInteraction={onContextInteraction}
           onSelect={(bodyArea) => {
             const nextBodyArea = bodyArea ?? '';
 
             setSelectedBodyArea(nextBodyArea);
 
-            if (bodyArea && !question.trim()) {
-              setQuestion(bodyArea);
+            if (!bodyArea) {
+              return;
             }
           }}
         />
@@ -207,5 +223,26 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 32,
     gap: 18,
+  },
+  staleCard: {
+    backgroundColor: '#FFF8E1',
+    borderRadius: 24,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(212, 175, 55, 0.35)',
+    gap: 8,
+  },
+  staleEyebrow: {
+    color: '#D4AF37',
+    textTransform: 'uppercase',
+    letterSpacing: 2.2,
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  staleText: {
+    color: '#002366',
+    fontSize: 16,
+    lineHeight: 24,
+    fontWeight: '700',
   },
 });

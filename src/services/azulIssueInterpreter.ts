@@ -22,6 +22,7 @@ export type AzulIssueInterpreterInput = {
   padPlacementText?: string | null;
   technicalAreaText?: string | null;
   selectedRegionId?: StableBodyRegionId | string | null;
+  allowedStrategyIds?: string[] | null;
   fullGuidanceText?: string | null;
 };
 
@@ -336,12 +337,21 @@ export function interpretIssueForAzul(
   const isBroadInput = isBroadOnlyInput(normalizedIssueText);
   const isConfusingInput = hasAny(normalizedIssueText, CONFUSING_TERMS);
 
+  const specificIssueSignalCount = countMatches(
+    normalizedIssueText,
+    SPECIFIC_SIGNAL_TERMS
+  );
+  const hasSpecificIssueSignal = specificIssueSignalCount > 0;
+
   const match = matchProtocolPlacementStrategy({
     issueText: input.issueText,
-    padPlacementText: input.padPlacementText,
-    technicalAreaText: input.technicalAreaText,
+    padPlacementText: hasSpecificIssueSignal ? '' : input.padPlacementText,
+    technicalAreaText: hasSpecificIssueSignal ? '' : input.technicalAreaText,
     selectedRegionId: input.selectedRegionId,
-    fullGuidanceText: input.fullGuidanceText,
+    allowedStrategyIds: input.allowedStrategyIds,
+    fullGuidanceText: hasSpecificIssueSignal
+      ? normalizedIssueText
+      : input.fullGuidanceText,
   });
 
   const adjusted = calculateAdjustedConfidence({
@@ -395,6 +405,9 @@ export function interpretIssueForAzul(
     reasons: [
       ...adjusted.reasons,
       ...(match.reasons ?? []),
+      hasSpecificIssueSignal
+        ? 'specific user wording used as source of truth'
+        : '',
       redFlag ? 'red flag language detected' : '',
       shouldUseMatchedStrategy
         ? 'use matched strategy'

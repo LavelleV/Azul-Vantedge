@@ -1,4 +1,5 @@
 import { interpretIssueForAzul } from './azulIssueInterpreter';
+import { getAllowedStrategyIdsForContext } from './anatomicalContextRules';
 import type {
   AzulAgentInput,
   AzulAgentResponse,
@@ -223,6 +224,7 @@ export function alignAzulResponseLanguageToMatchedStrategy({
     padPlacementText: padPlacement.join(' '),
     technicalAreaText: padPlacement.join(' '),
     selectedRegionId: input.selectedBodyArea,
+    allowedStrategyIds: getAllowedStrategyIdsForContext(input.analysisContext),
     fullGuidanceText: [
       input.userQuestion,
       input.selectedBodyArea ?? '',

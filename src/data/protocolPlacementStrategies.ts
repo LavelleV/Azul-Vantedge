@@ -459,6 +459,42 @@ export const PROTOCOL_PLACEMENT_STRATEGIES: ProtocolPlacementStrategy[] = [
     ],
   },
   {
+    id: "hip_flexor_anterior_hip",
+    label: "Front Hip / Hip Flexor Pattern",
+    mode: "local",
+    regionIds: ["hip_glute"],
+    issueKeywords: [
+      "front hip",
+      "hip flexor",
+      "anterior hip",
+      "hip crease",
+      "front of hip",
+      "hip tightness",
+    ],
+    padPlacementKeywords: [
+      "front of the hip",
+      "hip crease",
+      "hip flexor",
+      "side of the same hip",
+      "outer hip bone",
+    ],
+    technicalKeywords: [
+      "anterior hip",
+      "iliopsoas",
+      "hip flexor",
+      "greater trochanter",
+      "lateral hip",
+    ],
+    visualDefinitionId: "hip_front_visual",
+    plainLanguagePlacement:
+      "Place one pad on the front of the hip where the crease or hip-flexor tightness feels most active, and place the second on the side of the same hip near the outer hip bone.",
+    technicalPlacement:
+      "Anterior hip / iliopsoas region to Greater Trochanter / lateral hip support region.",
+    safetyNotes: [
+      "Avoid forcing deep hip stretching before the area settles.",
+    ],
+  },
+  {
     id: "hip_glute_deep_tension",
     label: "Deep Glute / Piriformis Pattern",
     mode: "pathway",

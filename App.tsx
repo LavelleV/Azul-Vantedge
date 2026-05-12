@@ -33,6 +33,12 @@ import {
   type UserMode,
   type VibeJournalData,
 } from './src/services/azulAgent';
+import {
+  analysisContextsMatch,
+  createActiveAnalysisContext,
+  getStaleGuidanceMessage,
+  type ActiveAnalysisContext,
+} from './src/services/anatomicalContextRules';
 
 const Stack = createNativeStackNavigator();
 
@@ -405,8 +411,11 @@ export default function App() {
   const [activeModel, setActiveModel] = useState<DeviceModel>(deviceModels[0]);
   const [userMode, setUserMode] = useState<UserMode>('client');
   const [question, setQuestion] = useState('');
+  const [analyzedQuestion, setAnalyzedQuestion] = useState('');
   const [selectedBodyArea, setSelectedBodyArea] = useState<string | undefined>();
   const [response, setResponse] = useState<AzulAgentResponse>(defaultResponse);
+  const [currentAnalysisContext, setCurrentAnalysisContext] = useState<ActiveAnalysisContext | null>(null);
+  const [guidanceStale, setGuidanceStale] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [vibeVisible, setVibeVisible] = useState(false);
   const [vibeJournalData, setVibeJournalData] = useState<VibeJournalData>(defaultVibeJournal);
@@ -439,53 +448,101 @@ export default function App() {
     })();
   }, []);
 
-  const handleAnalyze = async (overrideQuestion?: string) => {
-    const userQuestion = (overrideQuestion ?? question).trim();
+  const handleAnalyze = async (overrideQuestion?: unknown) => {
+    const safeOverride =
+      typeof overrideQuestion === 'string' ? overrideQuestion : undefined;
+
+    const userQuestion = (safeOverride ?? question).trim();
 
     if (!userQuestion || isAnalyzing) {
       return;
     }
 
-    if (overrideQuestion !== undefined) {
+    if (safeOverride !== undefined) {
       setQuestion(userQuestion);
     }
 
+    const analysisContext = createActiveAnalysisContext({
+      userInput: userQuestion,
+      selectedBodyArea,
+    });
+
+    setAnalyzedQuestion(userQuestion);
+    setCurrentAnalysisContext(analysisContext);
+    setGuidanceStale(false);
     setResponse(defaultResponse);
     setIsAnalyzing(true);
 
-    const nextResponse = await generateAzulResponse({
-      userQuestion,
-      activeDeviceModel: activeModel,
-      vibeJournalData,
-      selectedBodyArea,
-      userMode,
-    });
+    try {
+      const nextResponse = await generateAzulResponse({
+        userQuestion,
+        activeDeviceModel: activeModel,
+        vibeJournalData,
+        selectedBodyArea,
+        userMode,
+        analysisContext,
+      });
 
-    setResponse(nextResponse);
-    const nextSession: SavedSession = {
-      id: `${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      question: userQuestion,
-      selectedBodyArea,
-      activeDeviceModel: activeModel,
-      userMode,
-      response: nextResponse,
-      vibeJournalData,
-    };
+      const contextualResponse = { ...nextResponse, analysisContext };
 
-    setSavedSessions((current) => {
-      const nextSessions = [nextSession, ...current].slice(0, MAX_SAVED_SESSIONS);
-      void saveSavedSessions(nextSessions);
-      return nextSessions;
-    });
-    setIsAnalyzing(false);
+      setResponse(contextualResponse);
+
+      const nextSession: SavedSession = {
+        id: `${Date.now()}`,
+        createdAt: new Date().toISOString(),
+        question: userQuestion,
+        selectedBodyArea,
+        activeDeviceModel: activeModel,
+        userMode,
+        response: contextualResponse,
+        vibeJournalData,
+        analysisContext,
+      };
+
+      setSavedSessions((current) => {
+        const nextSessions = [nextSession, ...current].slice(0, MAX_SAVED_SESSIONS);
+        void saveSavedSessions(nextSessions);
+        return nextSessions;
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
+
 
   const handleClear = () => {
     setQuestion('');
+    setAnalyzedQuestion('');
     setSelectedBodyArea(undefined);
     setResponse(defaultResponse);
+    setCurrentAnalysisContext(null);
+    setGuidanceStale(false);
     setIsAnalyzing(false);
+  };
+
+  const markGuidanceStale = () => {
+    if (analyzedQuestion) {
+      setGuidanceStale(true);
+    }
+  };
+
+  const handleQuestionChange = (value: string) => {
+    setQuestion(value);
+    if (value.trim() !== analyzedQuestion.trim()) {
+      markGuidanceStale();
+    }
+  };
+
+  const handleBodyAreaChange = (value: string | undefined) => {
+    setSelectedBodyArea(value);
+    const nextContext = createActiveAnalysisContext({
+      userInput: question,
+      selectedBodyArea: value,
+    });
+
+    if (response.analysisContext && !analysisContextsMatch(nextContext, response.analysisContext)) {
+      setGuidanceStale(true);
+    }
   };
 
 
@@ -637,12 +694,16 @@ export default function App() {
               userMode={userMode}
               setUserMode={setUserMode}
               question={question}
-              setQuestion={setQuestion}
+              analyzedQuestion={analyzedQuestion}
+              setQuestion={handleQuestionChange}
               selectedBodyArea={selectedBodyArea}
-              setSelectedBodyArea={setSelectedBodyArea}
+              setSelectedBodyArea={handleBodyAreaChange}
+              onContextInteraction={markGuidanceStale}
               onAnalyze={handleAnalyze}
               onClear={handleClear}
               response={response}
+              guidanceStale={guidanceStale}
+              staleMessage={getStaleGuidanceMessage()}
               isAnalyzing={isAnalyzing}
               vibeJournalData={vibeJournalData}
               onOpenVibeLog={() => setVibeVisible(true)}

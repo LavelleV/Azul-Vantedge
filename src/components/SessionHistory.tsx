@@ -2,6 +2,7 @@ import React from 'react';
 import { Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { DeviceModel } from '../data/deviceModels';
 import type { AzulAgentResponse, UserMode, VibeJournalData } from '../services/azulAgent';
+import type { ActiveAnalysisContext } from '../services/anatomicalContextRules';
 
 export type SavedSession = {
   id: string;
@@ -12,6 +13,7 @@ export type SavedSession = {
   userMode: UserMode;
   response: AzulAgentResponse;
   vibeJournalData: VibeJournalData;
+  analysisContext?: ActiveAnalysisContext;
 };
 
 function formatTimestamp(timestamp: string) {

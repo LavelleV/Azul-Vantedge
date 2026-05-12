@@ -158,6 +158,7 @@ type FlexibleBodyMapProps = {
   onAreaSelect?: (area: string | null) => void;
   onChange?: (area: string | null) => void;
   onSelectedAreaChange?: (area: string | null) => void;
+  onContextInteraction?: () => void;
   onClear?: () => void;
   [key: string]: unknown;
 };
@@ -237,7 +238,7 @@ function normalizeRegionId(
  * Returns null if the approved image is missing.
  * Never guesses, never swaps unrelated images.
  */
-export function resolveDetailImage(
+export function getDetailImageForRegion(
   regionId: StableBodyRegionId | string | null,
   view: BodyMapView
 ): ImageSourcePropType | null {
@@ -295,7 +296,7 @@ export function BodyMap(props: FlexibleBodyMapProps) {
     : null;
 
   const activeDetailImage = activeDetailRegionId
-    ? resolveDetailImage(activeDetailRegionId, view)
+    ? getDetailImageForRegion(activeDetailRegionId, view)
     : null;
 
   const activeDetailImageKey = activeDetailRegionId
@@ -360,19 +361,23 @@ export function BodyMap(props: FlexibleBodyMapProps) {
   function handleFullBodyRegionPress(regionId: StableBodyRegionId) {
     const region = BODY_MAP_MANIFEST[regionId];
 
+    props.onContextInteraction?.();
     emitSelection(region.label);
     setActiveDetailRegionId(region.id);
   }
 
   function handleChipPress(label: string) {
+    props.onContextInteraction?.();
     emitSelection(label);
   }
 
   function handleBackToFullBody() {
+    props.onContextInteraction?.();
     setActiveDetailRegionId(null);
   }
 
   function handleClearSelection() {
+    props.onContextInteraction?.();
     setActiveDetailRegionId(null);
     emitSelection(null);
     props.onClear?.();
@@ -440,7 +445,6 @@ export function BodyMap(props: FlexibleBodyMapProps) {
             />
           ) : (
             <View style={styles.fallbackCard}>
-              <Text style={styles.fallbackTitle}>Close-up image not added yet</Text>
               <Text style={styles.fallbackText}>
                 Close-up image not added yet for {regionLabel}. Use the
                 selection buttons on the right for now.
@@ -622,7 +626,10 @@ export function BodyMap(props: FlexibleBodyMapProps) {
         {!activeDetailRegion ? (
           <View style={styles.toggleRow}>
             <Pressable
-              onPress={() => setView("front")}
+              onPress={() => {
+                props.onContextInteraction?.();
+                setView("front");
+              }}
               style={[
                 styles.toggleButton,
                 view === "front" ? styles.toggleButtonActive : null,
@@ -639,7 +646,10 @@ export function BodyMap(props: FlexibleBodyMapProps) {
             </Pressable>
 
             <Pressable
-              onPress={() => setView("back")}
+              onPress={() => {
+                props.onContextInteraction?.();
+                setView("back");
+              }}
               style={[
                 styles.toggleButton,
                 view === "back" ? styles.toggleButtonActive : null,

@@ -3,6 +3,10 @@ import type { DeviceModel } from '../data/deviceModels';
 import { buildNumberedProtocolPlan } from './protocolPlanRules';
 import { buildPlainLanguagePadPlacement } from './padPlacementRules';
 import { alignAzulResponseLanguageToMatchedStrategy } from './azulResponseLanguageRules';
+import {
+  getSelectedAreaForGeneration,
+  type ActiveAnalysisContext,
+} from './anatomicalContextRules';
 export type UserMode = 'client' | 'practitioner';
 
 export type VibeJournalData = {
@@ -20,6 +24,7 @@ export type AzulAgentInput = {
   vibeJournalData: VibeJournalData;
   selectedBodyArea?: string;
   userMode: UserMode;
+  analysisContext?: ActiveAnalysisContext;
 };
 
 export type AzulAgentResponse = {
@@ -31,6 +36,7 @@ export type AzulAgentResponse = {
   aftercare: string[];
   escalation: string[];
   recommendAssessment: boolean;
+  analysisContext?: ActiveAnalysisContext;
 };
 
 type GuidanceContext = {
@@ -141,8 +147,8 @@ function finalizeResponse(
   context: GuidanceContext,
   response: AzulAgentResponse
 ): AzulAgentResponse {
-  const protocolArea = inferProtocolArea(input, context);
-  const selectedAreaForRules = protocolArea || input.selectedBodyArea;
+  const selectedAreaForRules =
+    getSelectedAreaForGeneration(input.analysisContext) || input.selectedBodyArea || inferProtocolArea(input, context);
 
   const responseWithProtocolPlan: AzulAgentResponse = {
     ...response,

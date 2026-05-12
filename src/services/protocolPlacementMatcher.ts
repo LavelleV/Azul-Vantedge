@@ -9,6 +9,7 @@ export type ProtocolPlacementMatchInput = {
   padPlacementText?: string | null;
   technicalAreaText?: string | null;
   selectedRegionId?: StableBodyRegionId | string | null;
+  allowedStrategyIds?: string[] | null;
   fullGuidanceText?: string | null;
 };
 
@@ -394,7 +395,14 @@ function scoreStrategy(
 export function matchProtocolPlacementStrategy(
   input: ProtocolPlacementMatchInput
 ): ProtocolPlacementMatchResult {
-  const scored: ScoredStrategy[] = PROTOCOL_PLACEMENT_STRATEGIES.map(
+  const allowedStrategyIds = input.allowedStrategyIds?.length
+    ? new Set(input.allowedStrategyIds)
+    : null;
+  const strategies = allowedStrategyIds
+    ? PROTOCOL_PLACEMENT_STRATEGIES.filter((strategy) => allowedStrategyIds.has(strategy.id))
+    : PROTOCOL_PLACEMENT_STRATEGIES;
+
+  const scored: ScoredStrategy[] = strategies.map(
     (strategy: ProtocolPlacementStrategy) => scoreStrategy(strategy, input)
   ).sort((a: ScoredStrategy, b: ScoredStrategy) => b.score - a.score);
 
