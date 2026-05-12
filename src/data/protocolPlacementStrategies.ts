@@ -65,7 +65,7 @@ export const PROTOCOL_PLACEMENT_STRATEGIES: ProtocolPlacementStrategy[] = [
       "upper cervical",
       "cervical",
     ],
-    visualDefinitionId: "brain_fog_head_neck_visual",
+    visualDefinitionId: "head-forehead-head-neck",
     plainLanguagePlacement:
       "Place one pad comfortably on the forehead above the eyebrows, and place the second near the back of the neck at the hairline.",
     technicalPlacement:
@@ -108,7 +108,7 @@ export const PROTOCOL_PLACEMENT_STRATEGIES: ProtocolPlacementStrategy[] = [
       "parasympathetic",
       "regulation",
     ],
-    visualDefinitionId: "brain_fog_head_neck_visual",
+    visualDefinitionId: "head-forehead-head-neck",
     plainLanguagePlacement:
       "Place one pad on the forehead area and the second near the back of the neck at the hairline, using conservative settings.",
     technicalPlacement:
@@ -147,7 +147,7 @@ export const PROTOCOL_PLACEMENT_STRATEGIES: ProtocolPlacementStrategy[] = [
       "frontal",
       "maxillary",
     ],
-    visualDefinitionId: "sinus_head_face_visual",
+    visualDefinitionId: "head-sinus",
     plainLanguagePlacement:
       "Place one pad near the forehead or sinus pressure area, and place the second near the cheek, temple, or nearby support area as appropriate.",
     technicalPlacement:
@@ -189,7 +189,7 @@ export const PROTOCOL_PLACEMENT_STRATEGIES: ProtocolPlacementStrategy[] = [
       "temporalis",
       "mandibular",
     ],
-    visualDefinitionId: "jaw_tmj_visual",
+    visualDefinitionId: "head-jaw-tmj",
     plainLanguagePlacement:
       "Place one pad near the jaw/TMJ area where the tension is felt, and place the second near the temple, cheek, or nearby jaw-support pathway.",
     technicalPlacement:
@@ -226,7 +226,7 @@ export const PROTOCOL_PLACEMENT_STRATEGIES: ProtocolPlacementStrategy[] = [
       "suboccipital",
       "upper cervical",
     ],
-    visualDefinitionId: "brain_fog_head_neck_visual",
+    visualDefinitionId: "head-forehead-head-neck",
     plainLanguagePlacement:
       "Place one pad near the main head tension area and the second near the back of the neck at the hairline or base-of-skull support area.",
     technicalPlacement:
@@ -268,7 +268,7 @@ export const PROTOCOL_PLACEMENT_STRATEGIES: ProtocolPlacementStrategy[] = [
       "superior scapular",
       "scapular",
     ],
-    visualDefinitionId: "upper_trap_visual",
+    visualDefinitionId: "shoulder-upper-trap",
     plainLanguagePlacement:
       "Place one pad on the top of the shoulder where the neck and shoulder meet, and place the second slightly behind or below it toward the shoulder blade.",
     technicalPlacement:
@@ -304,7 +304,7 @@ export const PROTOCOL_PLACEMENT_STRATEGIES: ProtocolPlacementStrategy[] = [
       "upper trapezius",
       "cervical",
     ],
-    visualDefinitionId: "neck_to_shoulder_visual",
+    visualDefinitionId: "neck-base-of-skull",
     plainLanguagePlacement:
       "Place one pad near the neck-to-shoulder tension area and place the second along the upper neck or shoulder pathway where the tightness travels.",
     technicalPlacement:
@@ -339,7 +339,7 @@ export const PROTOCOL_PLACEMENT_STRATEGIES: ProtocolPlacementStrategy[] = [
       "infraspinatus",
       "posterior shoulder",
     ],
-    visualDefinitionId: "shoulder_blade_visual",
+    visualDefinitionId: "shoulder-scapula",
     plainLanguagePlacement:
       "Place one pad on the sore shoulder-blade area and place the second nearby along the same muscle pathway toward the spine or rear shoulder.",
     technicalPlacement:
@@ -375,7 +375,7 @@ export const PROTOCOL_PLACEMENT_STRATEGIES: ProtocolPlacementStrategy[] = [
       "teres",
       "lateral shoulder",
     ],
-    visualDefinitionId: "rotator_cuff_visual",
+    visualDefinitionId: "shoulder-rotator-cuff",
     plainLanguagePlacement:
       "Place one pad on the back of the shoulder where the soft muscle area feels sore, and place the second slightly to the side or front of the same shoulder.",
     technicalPlacement:
@@ -413,7 +413,7 @@ export const PROTOCOL_PLACEMENT_STRATEGIES: ProtocolPlacementStrategy[] = [
       "asis",
       "lumbosacral",
     ],
-    visualDefinitionId: "si_joint_visual",
+    visualDefinitionId: "low-back-si-joint",
     plainLanguagePlacement:
       "Place one pad on the sore low-back dimple area just to the side of the spine, and place the second on the same-side outer hip or front hip bone area.",
     technicalPlacement:
@@ -449,7 +449,7 @@ export const PROTOCOL_PLACEMENT_STRATEGIES: ProtocolPlacementStrategy[] = [
       "lumbosacral",
       "sacral",
     ],
-    visualDefinitionId: "low_back_lumbar_visual",
+    visualDefinitionId: "low-back-lumbar-center",
     plainLanguagePlacement:
       "Place one pad over the main low-back tight area and the second slightly lower or nearby along the same low-back support pathway.",
     technicalPlacement:
@@ -485,7 +485,7 @@ export const PROTOCOL_PLACEMENT_STRATEGIES: ProtocolPlacementStrategy[] = [
       "greater trochanter",
       "lateral hip",
     ],
-    visualDefinitionId: "hip_front_visual",
+    visualDefinitionId: "hip-front-hip-flexor",
     plainLanguagePlacement:
       "Place one pad on the front of the hip where the crease or hip-flexor tightness feels most active, and place the second on the side of the same hip near the outer hip bone.",
     technicalPlacement:
@@ -522,7 +522,7 @@ export const PROTOCOL_PLACEMENT_STRATEGIES: ProtocolPlacementStrategy[] = [
       "greater trochanter",
       "posterolateral hip",
     ],
-    visualDefinitionId: "hip_glute_visual",
+    visualDefinitionId: "hip-piriformis",
     plainLanguagePlacement:
       "Place one pad on the sore butt-cheek area where the discomfort feels deepest, and place the second toward the outer hip or nearby support pathway.",
     technicalPlacement:
@@ -560,7 +560,7 @@ export const PROTOCOL_PLACEMENT_STRATEGIES: ProtocolPlacementStrategy[] = [
       "tibial tuberosity",
       "suprapatellar",
     ],
-    visualDefinitionId: "knee_front_visual",
+    visualDefinitionId: "knee-patella",
     plainLanguagePlacement:
       "Place one pad near the main front-knee discomfort area and the second above or below the kneecap along the tendon support pathway.",
     technicalPlacement:
@@ -602,7 +602,7 @@ export const PROTOCOL_PLACEMENT_STRATEGIES: ProtocolPlacementStrategy[] = [
       "medial ankle",
       "lateral ankle",
     ],
-    visualDefinitionId: "foot_ankle_visual",
+    visualDefinitionId: "foot-ankle-support",
     plainLanguagePlacement:
       "Place one pad near the main foot or ankle discomfort area and the second along the related arch, heel, forefoot, or ankle support pathway.",
     technicalPlacement:
@@ -644,7 +644,7 @@ export const PROTOCOL_PLACEMENT_STRATEGIES: ProtocolPlacementStrategy[] = [
       "elbow",
       "tendon",
     ],
-    visualDefinitionId: "arm_overuse_visual",
+    visualDefinitionId: "arm-forearm",
     plainLanguagePlacement:
       "Place one pad near the main arm, elbow, wrist, or hand discomfort area and the second along the same forearm muscle-tendon pathway.",
     technicalPlacement:
