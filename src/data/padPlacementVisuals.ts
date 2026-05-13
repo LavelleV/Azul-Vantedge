@@ -780,3 +780,17 @@ export function getPadPlacementVisual(
     ) ?? null
   );
 }
+
+
+export function getPadPlacementVisualById(
+  visualDefinitionId?: string | null
+): PadPlacementVisualDefinition | null {
+  if (!visualDefinitionId) {
+    return null;
+  }
+
+  return (
+    PAD_PLACEMENT_VISUALS.find((item) => item.id === visualDefinitionId) ??
+    null
+  );
+}

@@ -24,7 +24,10 @@ import shoulderFrontImage from "../../assets/body-map/regions/shoulder-front.png
 import sinusFaceFrontImage from "../../assets/body-map/regions/sinus-face-front.png";
 
 import type { StableBodyRegionId } from "../data/bodyMapRegions";
-import { getPadPlacementVisual } from "../data/padPlacementVisuals";
+import {
+  getPadPlacementVisual,
+  getPadPlacementVisualById,
+} from "../data/padPlacementVisuals";
 import PadPlacementVisualPanel from "./PadPlacementVisualPanel";
 
 import type { AzulAgentResponse } from "../services/azulAgent";
@@ -197,8 +200,10 @@ function MatchedPlacementVisual({
   const match = interpretation.match;
 
   const visual = useMemo(
-    () => getStrategyVisual(match.strategyId),
-    [match.strategyId]
+    () =>
+      getPadPlacementVisualById(match.strategy?.visualDefinitionId) ??
+      getStrategyVisual(match.strategyId),
+    [match.strategy?.visualDefinitionId, match.strategyId]
   );
 
   if (interpretation.redFlag) {
