@@ -7,6 +7,10 @@ import {
   getSelectedAreaForGeneration,
   type ActiveAnalysisContext,
 } from './anatomicalContextRules';
+import {
+  getHowertHomeKnowledgeForIssue,
+  type HowertHomeKnowledgeResult,
+} from './howertHomeKnowledge';
 export type UserMode = 'client' | 'practitioner';
 
 export type VibeJournalData = {
@@ -37,6 +41,7 @@ export type AzulAgentResponse = {
   escalation: string[];
   recommendAssessment: boolean;
   analysisContext?: ActiveAnalysisContext;
+  manualKnowledge?: HowertHomeKnowledgeResult;
 };
 
 type GuidanceContext = {
@@ -150,8 +155,18 @@ function finalizeResponse(
   const selectedAreaForRules =
     getSelectedAreaForGeneration(input.analysisContext) || input.selectedBodyArea || inferProtocolArea(input, context);
 
+  const manualKnowledge = context.homeModel
+    ? getHowertHomeKnowledgeForIssue({
+        issueText: input.userQuestion,
+        selectedBodyArea: selectedAreaForRules,
+        maxPrograms: 6,
+        maxGuides: 4,
+      })
+    : undefined;
+
   const responseWithProtocolPlan: AzulAgentResponse = {
     ...response,
+    manualKnowledge,
     bestStartingProtocol: buildNumberedProtocolPlan({
       userQuestion: input.userQuestion,
       selectedBodyArea: selectedAreaForRules,
