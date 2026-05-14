@@ -162,6 +162,85 @@ function Section({ title, items }: { title: string; items: string[] }) {
   );
 }
 
+
+function buildManualSupportItems(response: AzulAgentResponse): string[] {
+  const manualKnowledge = response.manualKnowledge;
+
+  if (manualKnowledge?.programs?.length) {
+    const programs = manualKnowledge.programs.map((match) => match.program);
+    const primaryProgram = programs[0];
+    const relatedPrograms = programs.slice(1, 4);
+
+    const items = [
+      `HoweRT Home Manual match: #${primaryProgram.programNumber} ${primaryProgram.protocolCode} ${primaryProgram.programName}, ${primaryProgram.time}.`,
+    ];
+
+    if (primaryProgram.usesFor) {
+      items.push(`Manual use: ${primaryProgram.usesFor}`);
+    }
+
+    if (relatedPrograms.length) {
+      items.push(
+        `Related manual options: ${relatedPrograms
+          .map(
+            (program) =>
+              `#${program.programNumber} ${program.protocolCode} ${program.programName}`
+          )
+          .join("; ")}.`
+      );
+    }
+
+    if (primaryProgram.precautions) {
+      items.push(`Safety note: ${primaryProgram.precautions}`);
+    } else if (manualKnowledge.safetyNotes.length) {
+      items.push(`Safety note: ${manualKnowledge.safetyNotes[0]}`);
+    }
+
+    return items;
+  }
+
+  const protocolPlan = safeItems(response.bestStartingProtocol);
+  const primaryLine = protocolPlan.find((item) => item.startsWith("Primary: #"));
+  const relatedLines = protocolPlan.filter(
+    (item) =>
+      item.startsWith("Cartilage/meniscus option: #") ||
+      item.startsWith("Tendon option: #") ||
+      item.startsWith("Add-on: #")
+  );
+  const professionalLine = protocolPlan.find((item) =>
+    item.startsWith("Professional option:")
+  );
+
+  if (!primaryLine) {
+    return [];
+  }
+
+  const items = [
+    `Home protocol support: ${primaryLine.replace(/^Primary:\s*/, "")}`,
+  ];
+
+  if (relatedLines.length) {
+    items.push(
+      `Related protocol options: ${relatedLines
+        .map((item) =>
+          item
+            .replace(/^Cartilage\/meniscus option:\s*/, "")
+            .replace(/^Tendon option:\s*/, "")
+            .replace(/^Add-on:\s*/, "")
+        )
+        .join("; ")}`
+    );
+  }
+
+  if (professionalLine) {
+    items.push(
+      `Safety note: ${professionalLine.replace(/^Professional option:\s*/, "")}`
+    );
+  }
+
+  return items;
+}
+
 function MatchedPlacementVisual({
   response,
   issueText,
@@ -500,6 +579,11 @@ export function ProtocolResponseCard({
           <Section
             title="Session Tips"
             items={safeItems(response.sessionTips)}
+          />
+
+          <Section
+            title="Manual Support"
+            items={buildManualSupportItems(response)}
           />
 
           <Section title="Aftercare" items={safeItems(response.aftercare)} />
