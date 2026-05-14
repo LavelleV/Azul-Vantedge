@@ -1,6 +1,7 @@
 import type { BodyMapView, StableBodyRegionId } from "./bodyMapRegions";
 
 export type OverlayBaseImageKey =
+  | "abdomen-front"
   | "shoulder-front"
   | "shoulder-back"
   | "posterior-shoulder-back"
@@ -44,6 +45,48 @@ export type PadPlacementAnchor = {
  * not inside every individual rule.
  */
 export const PAD_PLACEMENT_ANCHORS: Record<string, PadPlacementAnchor> = {
+  // ABDOMEN / GUT
+  upper_abdomen_support: {
+    id: "upper_abdomen_support",
+    label: "Upper Abdomen",
+    technicalAnchor: "Upper abdominal / stomach support region",
+    regionId: "abdomen",
+    view: "front",
+    imageKey: "abdomen-front",
+    x: 50,
+    y: 38,
+  },
+  lower_abdomen_support: {
+    id: "lower_abdomen_support",
+    label: "Lower Abdomen",
+    technicalAnchor: "Lower abdominal support region",
+    regionId: "abdomen",
+    view: "front",
+    imageKey: "abdomen-front",
+    x: 50,
+    y: 64,
+  },
+  left_abdomen_support: {
+    id: "left_abdomen_support",
+    label: "Left Abdomen",
+    technicalAnchor: "Left abdominal support region",
+    regionId: "abdomen",
+    view: "front",
+    imageKey: "abdomen-front",
+    x: 38,
+    y: 52,
+  },
+  right_abdomen_support: {
+    id: "right_abdomen_support",
+    label: "Right Abdomen",
+    technicalAnchor: "Right abdominal support region",
+    regionId: "abdomen",
+    view: "front",
+    imageKey: "abdomen-front",
+    x: 62,
+    y: 52,
+  },
+
   // HEAD / FACE / JAW / NECK
   frontal_region_forehead: {
     id: "frontal_region_forehead",

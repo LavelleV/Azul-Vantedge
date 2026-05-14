@@ -165,6 +165,44 @@ const PAD_PLACEMENT_VISUAL_SOURCES: PadPlacementVisualSource[] = [
     ],
   },
 
+  // ABDOMEN / GUT
+  {
+    id: "abdomen-gut-general-support",
+    regionId: "abdomen",
+    chipLabel: "General Gut Support",
+    technicalArea: "Upper abdomen to lower abdomen support region.",
+    padAnchors: [
+      {
+        padId: "pad1",
+        anchorId: "upper_abdomen_support",
+        label: "Pad 1 — Upper Abdomen",
+      },
+      {
+        padId: "pad2",
+        anchorId: "lower_abdomen_support",
+        label: "Pad 2 — Lower Abdomen",
+      },
+    ],
+  },
+  {
+    id: "abdomen-side-support",
+    regionId: "abdomen",
+    chipLabel: "Side Abdomen",
+    technicalArea: "Left abdomen to right abdomen support region.",
+    padAnchors: [
+      {
+        padId: "pad1",
+        anchorId: "left_abdomen_support",
+        label: "Pad 1 — Left Abdomen",
+      },
+      {
+        padId: "pad2",
+        anchorId: "right_abdomen_support",
+        label: "Pad 2 — Right Abdomen",
+      },
+    ],
+  },
+
   // NECK
   {
     id: "neck-base-of-skull",
@@ -715,6 +753,7 @@ function normalize(value?: string | null): string {
 
 function getViewTitle(imageKey: OverlayBaseImageKey): string {
   const titles: Record<OverlayBaseImageKey, string> = {
+    "abdomen-front": "Abdomen / Gut View",
     "shoulder-front": "Front Shoulder View",
     "shoulder-back": "Back Shoulder View",
     "posterior-shoulder-back": "Posterior Shoulder View",

@@ -7,6 +7,7 @@ import {
   View,
 } from "react-native";
 
+import abdomenFrontImage from "../../assets/body-map/regions/abdomen-front.png";
 import armFrontImage from "../../assets/body-map/regions/arm-front.png";
 import footAnkleFrontImage from "../../assets/body-map/regions/foot-ankle-front.png";
 import footBottomPlantarImage from "../../assets/body-map/regions/foot-bottom-plantar.png";
@@ -40,6 +41,7 @@ type StrategyVisualTarget = {
 };
 
 const PAD_OVERLAY_BASE_IMAGES: Record<string, ImageSourcePropType> = {
+  "abdomen-front": abdomenFrontImage as ImageSourcePropType,
   "arm-front": armFrontImage as ImageSourcePropType,
   "foot-ankle-front": footAnkleFrontImage as ImageSourcePropType,
   "foot-bottom-plantar": footBottomPlantarImage as ImageSourcePropType,

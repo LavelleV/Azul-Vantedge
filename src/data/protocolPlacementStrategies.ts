@@ -738,7 +738,7 @@ export const PROTOCOL_PLACEMENT_STRATEGIES: ProtocolPlacementStrategy[] = [
       "regulation",
       "support",
     ],
-    visualDefinitionId: "head-forehead-head-neck",
+    visualDefinitionId: "abdomen-gut-general-support",
     plainLanguagePlacement:
       "Use the protocol-specific pad placement from the guidance card. When the issue is systemic, the placement may follow a body-system support pattern rather than a local pain point.",
     technicalPlacement:
