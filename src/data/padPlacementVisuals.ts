@@ -203,6 +203,26 @@ const PAD_PLACEMENT_VISUAL_SOURCES: PadPlacementVisualSource[] = [
     ],
   },
 
+  {
+    id: "neck-front-general-support",
+    regionId: "neck",
+    chipLabel: "Front Neck",
+    technicalArea:
+      "Anterior-lateral cervical support region. Avoid direct front-throat or carotid placement unless guided by a qualified professional.",
+    padAnchors: [
+      {
+        padId: "pad1",
+        anchorId: "front_neck_upper_lateral",
+        label: "Pad 1 — Upper Front Neck",
+      },
+      {
+        padId: "pad2",
+        anchorId: "front_neck_lower_lateral",
+        label: "Pad 2 — Lower Front Neck",
+      },
+    ],
+  },
+
   // SHOULDER
   {
     id: "shoulder-front-coracoid",
@@ -708,6 +728,7 @@ function getViewTitle(imageKey: OverlayBaseImageKey): string {
     "arm-front": "Arm View",
     "head-face-front": "Head / Face Front View",
     "head-neck-back": "Head / Neck Back View",
+    "neck-front": "Front Neck View",
     "head-side-jaw-tmj": "Jaw / TMJ Side View",
     "sinus-face-front": "Sinus / Face View",
   };

@@ -14,6 +14,7 @@ export type OverlayBaseImageKey =
   | "arm-front"
   | "head-face-front"
   | "head-neck-back"
+  | "neck-front"
   | "head-side-jaw-tmj"
   | "sinus-face-front";
 
@@ -83,6 +84,26 @@ export const PAD_PLACEMENT_ANCHORS: Record<string, PadPlacementAnchor> = {
     imageKey: "head-neck-back",
     x: 50,
     y: 52,
+  },
+  front_neck_upper_lateral: {
+    id: "front_neck_upper_lateral",
+    label: "Upper Front Neck",
+    technicalAnchor: "Anterior-lateral upper cervical support region",
+    regionId: "neck",
+    view: "front",
+    imageKey: "neck-front",
+    x: 42,
+    y: 42,
+  },
+  front_neck_lower_lateral: {
+    id: "front_neck_lower_lateral",
+    label: "Lower Front Neck",
+    technicalAnchor: "Anterior-lateral lower cervical / collarbone support region",
+    regionId: "neck",
+    view: "front",
+    imageKey: "neck-front",
+    x: 58,
+    y: 62,
   },
   temple_temporalis: {
     id: "temple_temporalis",

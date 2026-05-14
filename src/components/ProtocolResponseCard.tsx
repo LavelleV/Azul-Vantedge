@@ -17,6 +17,7 @@ import hipFrontImage from "../../assets/body-map/regions/hip-front.png";
 import hipGluteBackImage from "../../assets/body-map/regions/hip-glute-back.png";
 import kneeFrontImage from "../../assets/body-map/regions/knee-front.png";
 import lowBackBackImage from "../../assets/body-map/regions/low-back-back.png";
+import neckFrontImage from "../../assets/body-map/regions/neck-front.png";
 import posteriorShoulderBackImage from "../../assets/body-map/regions/posterior-shoulder-back.png";
 import scapulaBackImage from "../../assets/body-map/regions/scapula-back.png";
 import shoulderBackImage from "../../assets/body-map/regions/shoulder-back.png";
@@ -49,6 +50,7 @@ const PAD_OVERLAY_BASE_IMAGES: Record<string, ImageSourcePropType> = {
   "hip-glute-back": hipGluteBackImage as ImageSourcePropType,
   "knee-front": kneeFrontImage as ImageSourcePropType,
   "low-back-back": lowBackBackImage as ImageSourcePropType,
+  "neck-front": neckFrontImage as ImageSourcePropType,
   "posterior-shoulder-back": posteriorShoulderBackImage as ImageSourcePropType,
   "scapula-back": scapulaBackImage as ImageSourcePropType,
   "shoulder-back": shoulderBackImage as ImageSourcePropType,
