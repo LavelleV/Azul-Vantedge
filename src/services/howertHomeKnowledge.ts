@@ -60,6 +60,10 @@ const ISSUE_EXPANSIONS: Record<string, string[]> = {
   tingling: ["tingling", "nerve", "pins and needles", "radiating pain"],
   shooting: ["shooting", "nerve", "sharp", "radiating pain"],
   swelling: ["swelling", "joint swelling", "trauma", "inflammation"],
+  swollen: ["swelling", "joint swelling", "trauma", "inflammation"],
+  twist: ["sprain", "joint", "injury", "ligament"],
+  twisted: ["sprain", "joint", "injury", "ligament"],
+  twisting: ["sprain", "joint", "injury", "ligament"],
   stiff: ["stiffness", "joint stiffness", "capsule tightness", "range of motion"],
   strain: ["strain", "muscle strain", "injury", "muscle pain"],
   sprain: ["sprain", "joint", "injury", "ligament"],
@@ -87,6 +91,31 @@ const RISK_WEIGHT: Record<string, number> = {
   "medical-referral": 4,
 };
 
+const SEARCH_STOP_WORDS = new Set([
+  "a",
+  "an",
+  "and",
+  "are",
+  "around",
+  "after",
+  "during",
+  "for",
+  "from",
+  "has",
+  "have",
+  "into",
+  "is",
+  "it",
+  "me",
+  "my",
+  "of",
+  "on",
+  "or",
+  "the",
+  "to",
+  "with",
+]);
+
 function normalize(value?: string | number | null): string {
   return String(value ?? "")
     .toLowerCase()
@@ -104,17 +133,20 @@ function buildSearchTerms(input: HowertHomeKnowledgeInput): string[] {
     [input.issueText, input.selectedBodyArea].filter(Boolean).join(" ")
   );
 
-  const rawTerms = baseText.split(" ").filter((term) => term.length >= 2);
+  const rawTerms = baseText
+    .split(" ")
+    .filter((term) => term.length >= 3 && !SEARCH_STOP_WORDS.has(term));
+
   const expanded: string[] = [...rawTerms];
 
   Object.entries(BODY_AREA_EXPANSIONS).forEach(([key, terms]) => {
-    if (baseText.includes(key.replace("_", " "))) {
+    if (hasExactNormalizedTerm(baseText, key.replace("_", " "))) {
       expanded.push(...terms);
     }
   });
 
   Object.entries(ISSUE_EXPANSIONS).forEach(([key, terms]) => {
-    if (baseText.includes(key)) {
+    if (hasExactNormalizedTerm(baseText, key)) {
       expanded.push(...terms);
     }
   });
@@ -155,6 +187,22 @@ function guideSearchText(guide: HowertHomeSetupGuide): string {
   );
 }
 
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function hasExactNormalizedTerm(searchText: string, term: string): boolean {
+  const normalizedTerm = normalize(term);
+
+  if (!normalizedTerm) {
+    return false;
+  }
+
+  const pattern = new RegExp(`(^| )${escapeRegex(normalizedTerm)}($| )`);
+
+  return pattern.test(searchText);
+}
+
 function scoreText(searchText: string, terms: string[]): { score: number; matchedTerms: string[] } {
   let score = 0;
   const matchedTerms: string[] = [];
@@ -164,9 +212,9 @@ function scoreText(searchText: string, terms: string[]): { score: number; matche
       return;
     }
 
-    if (searchText.includes(term)) {
+    if (hasExactNormalizedTerm(searchText, term)) {
       matchedTerms.push(term);
-      score += term.includes(" ") ? 4 : 2;
+      score += term.includes(" ") ? 5 : 2;
     }
   });
 
@@ -255,7 +303,7 @@ export function getHowertHomeKnowledgeForIssue(
 
     return {
       program,
-      score: score + RISK_WEIGHT[program.riskLevel],
+      score,
       matchedTerms,
     };
   })
@@ -268,7 +316,7 @@ export function getHowertHomeKnowledgeForIssue(
 
     return {
       guide,
-      score: score + RISK_WEIGHT[guide.riskLevel],
+      score,
       matchedTerms,
     };
   })
