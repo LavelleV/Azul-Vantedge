@@ -695,7 +695,7 @@ export const PROTOCOL_PLACEMENT_STRATEGIES: ProtocolPlacementStrategy[] = [
       "edema",
       "bruising",
     ],
-    visualDefinitionId: "local_injury_visual",
+    visualDefinitionId: "knee-patella",
     plainLanguagePlacement:
       "Place the pads around the affected area rather than directly stacking both pads on the most sensitive spot, using a conservative first session.",
     technicalPlacement:
@@ -738,7 +738,7 @@ export const PROTOCOL_PLACEMENT_STRATEGIES: ProtocolPlacementStrategy[] = [
       "regulation",
       "support",
     ],
-    visualDefinitionId: "systemic_support_visual",
+    visualDefinitionId: "head-forehead-head-neck",
     plainLanguagePlacement:
       "Use the protocol-specific pad placement from the guidance card. When the issue is systemic, the placement may follow a body-system support pattern rather than a local pain point.",
     technicalPlacement:
