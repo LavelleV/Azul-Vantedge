@@ -165,6 +165,46 @@ const PAD_PLACEMENT_VISUAL_SOURCES: PadPlacementVisualSource[] = [
     ],
   },
 
+  // CHEST / RESPIRATORY
+  {
+    id: "chest-respiratory-general-support",
+    regionId: "chest",
+    chipLabel: "Chest / Respiratory Support",
+    technicalArea:
+      "Upper anterior chest support region. Avoid use over implanted electronic devices and seek medical care for serious breathing symptoms.",
+    padAnchors: [
+      {
+        padId: "pad1",
+        anchorId: "upper_chest_left_support",
+        label: "Pad 1 — Upper Chest",
+      },
+      {
+        padId: "pad2",
+        anchorId: "upper_chest_right_support",
+        label: "Pad 2 — Upper Chest",
+      },
+    ],
+  },
+  {
+    id: "chest-sternum-support",
+    regionId: "chest",
+    chipLabel: "Sternum / Center Chest",
+    technicalArea:
+      "Upper chest to lower sternum support region. Use conservative placement and avoid medically concerning chest symptoms.",
+    padAnchors: [
+      {
+        padId: "pad1",
+        anchorId: "upper_chest_left_support",
+        label: "Pad 1 — Upper Chest",
+      },
+      {
+        padId: "pad2",
+        anchorId: "lower_chest_midline_support",
+        label: "Pad 2 — Lower Chest",
+      },
+    ],
+  },
+
   // ABDOMEN / GUT
   {
     id: "abdomen-gut-general-support",
@@ -753,6 +793,7 @@ function normalize(value?: string | null): string {
 
 function getViewTitle(imageKey: OverlayBaseImageKey): string {
   const titles: Record<OverlayBaseImageKey, string> = {
+    "chest-front": "Chest / Respiratory View",
     "abdomen-front": "Abdomen / Gut View",
     "shoulder-front": "Front Shoulder View",
     "shoulder-back": "Back Shoulder View",

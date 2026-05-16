@@ -13,6 +13,7 @@ export type OverlayBaseImageKey =
   | "foot-ankle-front"
   | "foot-bottom-plantar"
   | "arm-front"
+  | "chest-front"
   | "head-face-front"
   | "head-neck-back"
   | "neck-front"
@@ -85,6 +86,38 @@ export const PAD_PLACEMENT_ANCHORS: Record<string, PadPlacementAnchor> = {
     imageKey: "abdomen-front",
     x: 62,
     y: 52,
+  },
+
+  // CHEST / RESPIRATORY
+  upper_chest_left_support: {
+    id: "upper_chest_left_support",
+    label: "Upper Left Chest",
+    technicalAnchor: "Upper anterior chest support region",
+    regionId: "chest",
+    view: "front",
+    imageKey: "chest-front",
+    x: 42,
+    y: 40,
+  },
+  upper_chest_right_support: {
+    id: "upper_chest_right_support",
+    label: "Upper Right Chest",
+    technicalAnchor: "Upper anterior chest support region",
+    regionId: "chest",
+    view: "front",
+    imageKey: "chest-front",
+    x: 58,
+    y: 40,
+  },
+  lower_chest_midline_support: {
+    id: "lower_chest_midline_support",
+    label: "Lower Chest",
+    technicalAnchor: "Lower anterior chest / sternum support region",
+    regionId: "chest",
+    view: "front",
+    imageKey: "chest-front",
+    x: 50,
+    y: 58,
   },
 
   // HEAD / FACE / JAW / NECK
