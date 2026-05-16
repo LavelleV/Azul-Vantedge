@@ -9,6 +9,7 @@ import {
 
 import abdomenFrontImage from "../../assets/body-map/regions/abdomen-front.png";
 import armFrontImage from "../../assets/body-map/regions/arm-front.png";
+import chestFrontImage from "../../assets/body-map/regions/chest-front.png";
 import footAnkleFrontImage from "../../assets/body-map/regions/foot-ankle-front.png";
 import footBottomPlantarImage from "../../assets/body-map/regions/foot-bottom-plantar.png";
 import headFaceFrontImage from "../../assets/body-map/regions/head-face-front.png";
@@ -43,6 +44,7 @@ type StrategyVisualTarget = {
 const PAD_OVERLAY_BASE_IMAGES: Record<string, ImageSourcePropType> = {
   "abdomen-front": abdomenFrontImage as ImageSourcePropType,
   "arm-front": armFrontImage as ImageSourcePropType,
+  "chest-front": chestFrontImage as ImageSourcePropType,
   "foot-ankle-front": footAnkleFrontImage as ImageSourcePropType,
   "foot-bottom-plantar": footBottomPlantarImage as ImageSourcePropType,
   "head-face-front": headFaceFrontImage as ImageSourcePropType,
@@ -220,7 +222,7 @@ function buildManualSupportItems(response: AzulAgentResponse): string[] {
   }
 
   const items = [
-    `Home protocol support: ${primaryLine.replace(/^Primary:\s*/, "")}`,
+    `Manual protocol support: ${primaryLine.replace(/^Primary:\s*/, "")}`,
   ];
 
   if (relatedLines.length) {

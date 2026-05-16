@@ -182,6 +182,35 @@ function getIssueIntentBoosts(issueText: string, strategyId: string): {
   }
 
   if (
+    strategyId === "low_back_sciatic_nerve_pathway" &&
+    (hasAny([
+      "sciatica",
+      "sciatic",
+      "sciatic nerve",
+      "nerve pain",
+      "shooting",
+      "shoots",
+      "radiating",
+      "travels down",
+      "traveling down",
+      "down my leg",
+      "down the leg",
+      "down leg",
+      "tingling",
+      "numbness",
+      "burning",
+      "electric",
+      "pins and needles",
+    ]) ||
+      (hasAny(["nerve", "shooting", "radiating", "tingling", "numbness", "burning", "electric"]) &&
+        hasAny(["back", "low back", "lower back", "lumbar", "hip", "glute", "butt", "buttock"]) &&
+        hasAny(["leg", "thigh", "hamstring", "calf", "foot", "toes"])))
+  ) {
+    score += 50;
+    reasons.push("strong issue intent: low-back / sciatic nerve pathway");
+  }
+
+  if (
     strategyId === "hip_glute_deep_tension" &&
     hasAny(["glute", "butt", "butt cheek", "piriformis", "deep hip", "deep glute"])
   ) {
@@ -242,9 +271,45 @@ function getBroadStrategyPenalty(issueText: string, strategyId: string): {
     includesPhrase(issueText, "foggy") ||
     includesPhrase(issueText, "mental fog");
 
+  const hasSpecificSciatic =
+    includesPhrase(issueText, "sciatica") ||
+    includesPhrase(issueText, "sciatic") ||
+    includesPhrase(issueText, "sciatic nerve") ||
+    ((includesPhrase(issueText, "nerve") ||
+      includesPhrase(issueText, "shooting") ||
+      includesPhrase(issueText, "radiating") ||
+      includesPhrase(issueText, "travels down") ||
+      includesPhrase(issueText, "down my leg") ||
+      includesPhrase(issueText, "down the leg") ||
+      includesPhrase(issueText, "tingling") ||
+      includesPhrase(issueText, "numbness") ||
+      includesPhrase(issueText, "burning") ||
+      includesPhrase(issueText, "electric")) &&
+      (includesPhrase(issueText, "back") ||
+        includesPhrase(issueText, "low back") ||
+        includesPhrase(issueText, "lower back") ||
+        includesPhrase(issueText, "hip") ||
+        includesPhrase(issueText, "glute") ||
+        includesPhrase(issueText, "butt")) &&
+      (includesPhrase(issueText, "leg") ||
+        includesPhrase(issueText, "thigh") ||
+        includesPhrase(issueText, "calf") ||
+        includesPhrase(issueText, "foot") ||
+        includesPhrase(issueText, "toes")));
+
   if (strategyId === "low_back_general_ache" && hasSpecificSI) {
     score -= 20;
     reasons.push("penalty: user specified SI joint, not generic low back");
+  }
+
+  if (strategyId === "low_back_general_ache" && hasSpecificSciatic) {
+    score -= 36;
+    reasons.push("penalty: user specified sciatic / nerve pain traveling down the leg, not generic low back");
+  }
+
+  if (strategyId === "hip_glute_deep_tension" && hasSpecificSciatic) {
+    score -= 8;
+    reasons.push("penalty: sciatic pathway should use the dedicated low-back-to-leg strategy first");
   }
 
   if (strategyId === "shoulder_blade_tension" && hasSpecificRotator) {

@@ -63,6 +63,76 @@ function hasTerm(question: string, terms: string[]) {
   return terms.some((term) => question.includes(term));
 }
 
+
+function hasRespiratoryColdIntent(question: string): boolean {
+  return hasTerm(question, [
+    'cold',
+    'chest congestion',
+    'congestion',
+    'respiratory',
+    'upper respiratory',
+    'cough',
+    'bronchitis',
+    'breathing comfort',
+    'lung',
+    'lungs',
+    'mucus',
+    'flu',
+    'influenza',
+  ]);
+}
+
+function hasSciaticNerveIntent(question: string): boolean {
+  const hasDirectSciaticLanguage = hasTerm(question, [
+    'sciatica',
+    'sciatic',
+    'sciatic nerve',
+  ]);
+
+  const hasNerveLanguage = hasTerm(question, [
+    'nerve',
+    'shooting',
+    'shoots',
+    'radiating',
+    'travels down',
+    'traveling down',
+    'down my leg',
+    'down the leg',
+    'down leg',
+    'tingling',
+    'numbness',
+    'pins and needles',
+    'burning',
+    'electric',
+  ]);
+
+  const hasBackOrHipSource = hasTerm(question, [
+    'back',
+    'low back',
+    'lower back',
+    'lumbar',
+    'si joint',
+    'sacroiliac',
+    'hip',
+    'glute',
+    'butt',
+    'buttock',
+    'piriformis',
+  ]);
+
+  const hasLegPathway = hasTerm(question, [
+    'leg',
+    'thigh',
+    'hamstring',
+    'calf',
+    'foot',
+    'heel',
+    'toes',
+  ]);
+
+  return hasDirectSciaticLanguage || (hasNerveLanguage && hasBackOrHipSource && hasLegPathway);
+}
+
 function summarizeVibe(data: VibeJournalData) {
   return `Pain ${data.painBefore} to ${data.painAfter}, Focus ${data.focusBefore} to ${data.focusAfter}, Stress ${data.stressBefore} to ${data.stressAfter}`;
 }
@@ -82,11 +152,19 @@ function buildContext(input: AzulAgentInput): GuidanceContext {
 }
 
 function inferProtocolArea(input: AzulAgentInput, context: GuidanceContext): string {
+  const q = context.normalizedQuestion;
+
+  if (hasRespiratoryColdIntent(q)) {
+    return 'Chest / Respiratory';
+  }
+
+  if (hasSciaticNerveIntent(q)) {
+    return 'Low Back / SI';
+  }
+
   if (input.selectedBodyArea) {
     return input.selectedBodyArea;
   }
-
-  const q = context.normalizedQuestion;
 
   if (hasTerm(q, ['inner knee', 'inside knee', 'medial knee', 'below inner knee', 'back inner knee', 'knee', 'kneecap', 'patella', 'below knee', 'under kneecap', 'stairs', 'stiff knee'])) {
     return 'Knee';
@@ -152,8 +230,9 @@ function finalizeResponse(
   context: GuidanceContext,
   response: AzulAgentResponse
 ): AzulAgentResponse {
+  const inferredAreaFromCurrentIssue = inferProtocolArea(input, context);
   const selectedAreaForRules =
-    getSelectedAreaForGeneration(input.analysisContext) || input.selectedBodyArea || inferProtocolArea(input, context);
+    inferredAreaFromCurrentIssue || getSelectedAreaForGeneration(input.analysisContext) || input.selectedBodyArea;
 
   const manualKnowledge = context.homeModel
     ? getHowertHomeKnowledgeForIssue({
@@ -582,6 +661,108 @@ function buildBrainGuidance(input: AzulAgentInput, context: GuidanceContext): Az
   return response;
 }
 
+
+function buildRespiratoryColdGuidance(input: AzulAgentInput, context: GuidanceContext): AzulAgentResponse {
+  const response = buildBaseResponse();
+
+  response.clinicalRead = [
+    'This sounds like a cold / upper respiratory support pattern based on the current issue you described.',
+    'Azul is prioritizing the typed respiratory wording over any previous body-map selection so an old shoulder or rotator cuff pattern does not stay active.',
+    context.professionalOrSuite
+      ? 'This does not diagnose or treat illness. It keeps Azul focused on conservative Professional / PRO support, manual guidance, and safety boundaries.'
+      : 'This does not diagnose or treat illness. It keeps Azul focused on conservative Home Model support, manual guidance, and safety boundaries.',
+  ];
+
+  response.padPlacement = [
+    'Plain-language placement: Place pads only as allowed by the device/manual for upper respiratory support. A conservative support option is one pad over the upper chest congestion area below the collarbone and the second on the upper back between the shoulder blades.',
+    'Technical area: Upper anterior thoracic / pectoral region to upper posterior thoracic / parascapular region.',
+    'Safety note: Avoid the throat, face, broken skin, direct heart-center placement, and any implanted device area.',
+  ];
+
+  response.whyThisPlacement = [
+    'This setup is aligned to the cold / upper respiratory wording in the current question instead of relying on a stale shoulder or rotator cuff body-map state.',
+    'The goal is to keep the support field focused on upper respiratory comfort while staying conservative and safety-first.',
+  ];
+
+  response.sessionTips = [
+    'Start conservatively and keep the session comfortable.',
+    'Keep the intensity comfortable and sub-sensory.',
+    'Hydrate after the session and reassess breathing comfort, congestion, cough, and energy using the same words you started with.',
+    `Latest Vibe pattern: ${context.vibeSummary}.`,
+  ];
+
+  response.aftercare = [
+    'Recheck respiratory comfort later the same day and again the next morning.',
+    'Log the before/after response in the Vibe Journal so Azul can use the latest saved pattern as future context.',
+    'Pause progression and request higher-level guidance if symptoms worsen, feel unusual, or do not improve over time.',
+  ];
+
+  response.escalation = [
+    'Seek medical care right away for chest pain, severe shortness of breath, blue lips, confusion, high or worsening fever, wheezing that does not settle, symptoms with asthma/COPD/heart disease, or symptoms that worsen instead of improving.',
+    'Request Clinical Assessment with Lavelle when the issue is not urgent but needs a more personalized support sequence.',
+  ];
+
+  response.recommendAssessment = context.redFlag || context.notImproving;
+
+  if (context.practitioner) {
+    return withMassageIntegration(response, [
+      'Massage Integration: Keep hands-on work gentle and supportive around the upper chest, upper back, ribs, and breathing mechanics. Do not use aggressive pressure when respiratory symptoms are active.',
+    ]);
+  }
+
+  return response;
+}
+
+function buildSciaticNerveGuidance(input: AzulAgentInput, context: GuidanceContext): AzulAgentResponse {
+  const response = buildBaseResponse();
+
+  response.clinicalRead = [
+    'This sounds like a low-back / sciatic nerve pathway support pattern based on the issue you described.',
+    'The key clue is nerve-like pain traveling from the back or hip area down the leg, instead of a local shoulder, knee, or ankle pattern.',
+    'This does not diagnose sciatica or a disc condition. It keeps Azul focused on a conservative nerve-pathway support pattern and safety boundaries.',
+  ];
+
+  response.padPlacement = [
+    'Plain-language placement: Place one pad near the low back or upper butt-cheek area where the nerve pain seems to start, and place the second pad farther down the same-side leg along the path where the pain travels.',
+    'Technical area: Lumbar / SI-glute nerve root region to posterior thigh or sciatic pathway region.',
+    'Safety note: If numbness, weakness, foot drop, bowel/bladder changes, severe back pain, or rapidly worsening symptoms appear, seek medical evaluation immediately.',
+  ];
+
+  response.whyThisPlacement = [
+    'This setup follows the pathway described by the user instead of falling back to an old selected shoulder or rotator cuff pattern.',
+    'The goal is to support the low-back-to-leg nerve pathway while staying conservative and avoiding aggressive pressure directly into irritated tissue.',
+  ];
+
+  response.sessionTips = [
+    'Start conservatively and keep the session comfortable.',
+    'Do not force stretching, aggressive hip rotation, or deep pressure into the glute or low back while symptoms are active.',
+    'After the session, reassess the same symptom words you started with: shooting, burning, tingling, numbness, leg travel, or back pressure.',
+    `Latest Vibe pattern: ${context.vibeSummary}.`,
+    'Hydrate after the session.',
+  ];
+
+  response.aftercare = [
+    'Recheck back comfort, leg symptoms, walking tolerance, and sitting tolerance later the same day and again the next morning.',
+    'Log the before/after response in the Vibe Journal so Azul can use the latest saved pattern as future context.',
+    'If symptoms worsen, spread farther down the leg, or become more neurological, pause progression and request higher-level guidance.',
+  ];
+
+  response.escalation = [
+    'Seek medical care right away for bowel or bladder changes, saddle numbness, foot drop, progressive weakness, severe unrelenting pain, or symptoms after major trauma.',
+    'Request Clinical Assessment with Lavelle if the issue is not urgent but needs a more personalized low-back, SI, glute, and sciatic pathway support sequence.',
+  ];
+
+  response.recommendAssessment = context.redFlag || context.notImproving || context.homeModel;
+
+  if (context.practitioner) {
+    return withMassageIntegration(response, [
+      'Massage Integration: Keep manual work broad and supportive around the low back, glute, hip, and posterior-chain pathway. Avoid aggressive direct pressure into the sharpest nerve point.',
+    ]);
+  }
+
+  return response;
+}
+
 function buildFallbackGuidance(input: AzulAgentInput, context: GuidanceContext): AzulAgentResponse {
   if (context.selectedBodyArea === 'Shoulder') {
     return buildRotatorCuffGuidance({ ...input, userQuestion: `${input.userQuestion} shoulder` }, context);
@@ -708,7 +889,23 @@ export async function generateAzulResponse(
 
   let response: AzulAgentResponse;
 
-  if (hasTerm(q, ['inner knee', 'inside knee', 'medial knee', 'below inner knee', 'back inner knee'])) {
+  if (hasRespiratoryColdIntent(q)) {
+    response = buildRespiratoryColdGuidance(
+      {
+        ...input,
+        selectedBodyArea: 'Chest / Respiratory',
+      },
+      context
+    );
+  } else if (hasSciaticNerveIntent(q)) {
+    response = buildSciaticNerveGuidance(
+      {
+        ...input,
+        selectedBodyArea: 'Low Back / SI',
+      },
+      context
+    );
+  } else if (hasTerm(q, ['inner knee', 'inside knee', 'medial knee', 'below inner knee', 'back inner knee'])) {
     response = buildInnerKneeGuidance(input, context);
   } else if (hasTerm(q, ['knee', 'kneecap', 'patella', 'below knee', 'under kneecap', 'stairs', 'swelling', 'stiff knee'])) {
     response = buildKneeGuidance(input, context);

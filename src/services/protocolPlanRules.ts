@@ -115,7 +115,7 @@ const PRO_PROTOCOLS: ProtocolSet = {
   fascia: { number: 23, code: "M2", name: 'Fascia "Heal"', time: "35m x 4" },
   muscle: { number: 22, code: "M1", name: "Musc Strain/Inj", time: "44m" },
   jointGeneralPain: { number: 4, code: "Inj4", name: "Quick Jnt/Gen Pn", time: "15m" },
-  painNerve: { number: 5, code: "Inj5", name: "Quick Pn/Nrv", time: "21m" },
+  painNerve: { number: 35, code: "Spn8", name: "Nerve Complete", time: "50m" },
   jointSwelling: { number: 2, code: "Inj2", name: "Joint Swelling", time: "50m" },
   siFacet: { number: 40, code: "SPn13", name: "SI & Facet Pn", time: "39m" },
   tendon: { number: 10, code: "JB3", name: "Tendon", time: "27m" },
@@ -151,6 +151,24 @@ function normalize(value?: string | null): string {
 
 function includesAny(source: string, terms: string[]): boolean {
   return terms.some((term) => source.includes(term));
+}
+
+function hasRespiratoryColdIntent(source: string): boolean {
+  return includesAny(source, [
+    'cold',
+    'chest congestion',
+    'congestion',
+    'respiratory',
+    'upper respiratory',
+    'cough',
+    'bronchitis',
+    'breathing comfort',
+    'lung',
+    'lungs',
+    'mucus',
+    'flu',
+    'influenza',
+  ]);
 }
 
 function getQuestion(context: ProtocolPlanContext): string {
@@ -277,6 +295,28 @@ function buildHipGlutePlan(context: ProtocolPlanContext): string[] {
 function buildShoulderPlan(context: ProtocolPlanContext): string[] {
   const p = getProtocols(context);
   const patternText = getPatternText(context);
+  const isPro = getProgramKey(context) === "pro";
+
+  if (
+    isPro &&
+    includesAny(patternText, [
+      "rotator cuff",
+      "shoulder",
+      "overuse",
+      "impingement",
+      "abduction",
+      "rom",
+    ])
+  ) {
+    return [
+      `Primary: #12 JB5 Rotator Cuff (46m) — use this first when the issue clearly sounds like rotator cuff pain, shoulder overuse, shoulder-blade irritation, or reduced shoulder range.`,
+      `Tendon option: #10 JB3 Tendon (27m) — consider this if the issue feels like tendon soreness, pulling, repetitive-use irritation, or tendon involvement around the shoulder.`,
+      `Fascia option: #24 M2 Fascia Heal / Diastasis Recti & Accelerated Healing (35m x4) — consider this if the shoulder feels stuck, bound, restricted, or like tissue glide is limited after the main pain signal calms.`,
+      `Optional sequence: Run #12 first, then reassess. Add #10 or #24 only if the remaining pattern clearly matches tendon pull or restricted fascia glide.`,
+      `Professional option: If pain increases, range keeps dropping, weakness appears, numbness spreads, or the shoulder feels unstable, request Clinical Assessment with Lavelle or medical evaluation.`,
+    ];
+  }
+
   const primary = isSwellingPattern(patternText) ? p.jointSwelling : p.fascia;
 
   return [
@@ -287,6 +327,7 @@ function buildShoulderPlan(context: ProtocolPlanContext): string[] {
     `Professional option: If pain increases, range keeps dropping, weakness appears, numbness spreads, or the shoulder feels unstable, request Clinical Assessment with Lavelle or medical evaluation.`,
   ];
 }
+
 
 function buildWristHandPlan(context: ProtocolPlanContext): string[] {
   const p = getProtocols(context);
@@ -354,6 +395,42 @@ function buildFootAnklePlan(context: ProtocolPlanContext): string[] {
 
 function buildLowBackPlan(context: ProtocolPlanContext): string[] {
   const p = getProtocols(context);
+  const patternText = getPatternText(context);
+
+  const sciaticOrNervePathway =
+    isNervePattern(patternText) ||
+    includesAny(patternText, [
+      "sciatica",
+      "sciatic",
+      "sciatic nerve",
+      "nerve pain",
+      "shooting",
+      "shoots",
+      "radiating",
+      "travels down",
+      "traveling down",
+      "down my leg",
+      "down the leg",
+      "down leg",
+      "tingling",
+      "numbness",
+      "burning",
+      "electric",
+      "pins and needles",
+      "back to leg",
+      "low back to leg",
+      "lower back to leg",
+    ]);
+
+  if (sciaticOrNervePathway) {
+    return [
+      `Primary: ${protocolLabel(p.painNerve)} — use this first when the issue sounds nerve-like, shooting, burning, tingling, numb, radiating, or traveling from the low back / hip area down the leg.`,
+      `Low-back/SI option: ${protocolLabel(p.siFacet)} — consider this if the issue feels strongly centered around the SI joint, sacrum, facet-style irritation, or low-back dimple area after the nerve signal calms.`,
+      `Fascia option: ${protocolLabel(p.fascia)} — consider this only if the area feels calmer but still stiff, guarded, locked, or restricted through tissue glide.`,
+      `Optional sequence: Run #${p.painNerve.number} first, then reassess the exact nerve words: shooting, burning, tingling, numbness, leg travel, or back pressure.`,
+      `Professional option: If pain travels down the leg, numbness or weakness appears, bowel/bladder changes occur, foot drop appears, or symptoms worsen, request medical evaluation immediately or Clinical Assessment with Lavelle when appropriate.`,
+    ];
+  }
 
   return [
     `Primary: ${protocolLabel(p.siFacet)} — use this first when the issue feels centered around the low back, SI joint, sacrum, or facet-style irritation.`,
@@ -363,6 +440,7 @@ function buildLowBackPlan(context: ProtocolPlanContext): string[] {
     `Professional option: If pain travels down the leg, numbness or weakness appears, bowel/bladder changes occur, or symptoms worsen, request medical evaluation immediately or Clinical Assessment with Lavelle when appropriate.`,
   ];
 }
+
 
 function buildNeckPlan(context: ProtocolPlanContext): string[] {
   const p = getProtocols(context);
@@ -380,6 +458,28 @@ function buildNeckPlan(context: ProtocolPlanContext): string[] {
 
 function buildChestPlan(context: ProtocolPlanContext): string[] {
   const p = getProtocols(context);
+  const patternText = getPatternText(context);
+  const isPro = getProgramKey(context) === "pro";
+
+  if (hasRespiratoryColdIntent(patternText)) {
+    if (isPro) {
+      return [
+        `Primary: #54 Well3 Cold, Virus Chest / Upper Respiratory Viral (47m) — use for upper respiratory cold or bronchitis-type support.`,
+        `Related option: #59 Well8 Virus Pain / General (30m x4) — consider only when broader viral-pain language is present and appropriate professional guidance is followed.`,
+        `Post-illness / immune-system option: #70 Night6 Master Inflammation Reset / Vagus CNS Immune / Post Illness (3hr 30m) — consider only for broader post-illness, immune, CIRS, mold, Lyme, EBV, or inflammation-response patterns with professional guidance.`,
+        `Placement note: Use conservative upper chest / upper back respiratory support placement only as allowed by the device/manual. Avoid the throat, face, broken skin, direct heart-center placement, and implanted device areas.`,
+        `Professional option: Chest pain, severe shortness of breath, blue lips, confusion, high or worsening fever, wheezing that does not settle, asthma/COPD/heart disease complications, or worsening symptoms require medical evaluation immediately.`,
+      ];
+    }
+
+    return [
+      `Primary: #80 I4 Cold, Virus Chest / Upper Respiratory Viral, 47m — use for upper respiratory cold or bronchitis-type support.`,
+      `Related option: #88 I12 Lung Asthma — consider only when the issue clearly involves asthma/lung support language and appropriate professional guidance is followed.`,
+      `Related option: #82 I6 Influenza Respiratory with Fever — consider only when flu/fever respiratory language is present and standard medical care is prioritized.`,
+      `Placement note: Use conservative upper chest / upper back respiratory support placement only as allowed by the device/manual. Avoid the throat, face, broken skin, direct heart-center placement, and implanted device areas.`,
+      `Professional option: Chest pain, severe shortness of breath, blue lips, confusion, high or worsening fever, wheezing that does not settle, asthma/COPD/heart disease complications, or worsening symptoms require medical evaluation immediately.`,
+    ];
+  }
 
   return [
     `Primary: ${protocolLabel(p.jointGeneralPain)} — use this only for mild, non-emergency chest, rib, or intercostal discomfort when the pattern feels musculoskeletal and not cardiac or breathing-related.`,
@@ -389,6 +489,7 @@ function buildChestPlan(context: ProtocolPlanContext): string[] {
     `Professional option: Chest pain, pressure, shortness of breath, radiating pain, dizziness, or unexplained symptoms require medical evaluation immediately.`,
   ];
 }
+
 
 function buildAbdomenPlan(context: ProtocolPlanContext): string[] {
   const p = getProtocols(context);
