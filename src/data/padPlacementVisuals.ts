@@ -563,6 +563,25 @@ const PAD_PLACEMENT_VISUAL_SOURCES: PadPlacementVisualSource[] = [
     ],
   },
   {
+    id: "low-back-sciatic-nerve-pathway",
+    regionId: "hip_glute",
+    chipLabel: "Low-Back / Sciatic Nerve Pathway",
+    technicalArea:
+      "Lumbar / SI-glute nerve root region to posterior thigh or sciatic pathway region.",
+    padAnchors: [
+      {
+        padId: "pad1",
+        anchorId: "deep_glute_piriformis",
+        label: "Pad 1 — Deep Glute / Nerve Start",
+      },
+      {
+        padId: "pad2",
+        anchorId: "posterior_thigh_sciatic_pathway",
+        label: "Pad 2 — Posterior Thigh",
+      },
+    ],
+  },
+  {
     id: "hip-piriformis",
     regionId: "hip_glute",
     chipLabel: "Piriformis / Deep Glute",

@@ -46,6 +46,7 @@ import {
   FULL_BODY_HOTSPOTS,
   StableBodyRegionId,
 } from "../data/bodyMapRegions";
+import { getCloseUpOptionsForBodyArea } from "../data/bodyCloseUpOptions";
 
 import { getPadPlacementVisual } from "../data/padPlacementVisuals";
 import PadPlacementVisualPanel from "./PadPlacementVisualPanel";
@@ -312,6 +313,10 @@ export function BodyMap(props: FlexibleBodyMapProps) {
       ? selectedBodyArea
       : null;
 
+  const closeUpOptions = activeDetailRegionId
+    ? getCloseUpOptionsForBodyArea(activeDetailRegionId)
+    : [];
+
   const activePadPlacementRule: PadPlacementRule | null =
     activeDetailRegionId && selectedChipLabel
       ? getPadPlacementRule(activeDetailRegionId, selectedChipLabel)
@@ -545,7 +550,9 @@ export function BodyMap(props: FlexibleBodyMapProps) {
   }
 
   function renderSidePanel() {
-    const chips = activeDetailRegion?.chips ?? [];
+    const chips = closeUpOptions.length
+      ? closeUpOptions.map((option) => option.title)
+      : activeDetailRegion?.chips ?? [];
 
     return (
       <View style={styles.sidePanel}>
@@ -573,6 +580,9 @@ export function BodyMap(props: FlexibleBodyMapProps) {
             <View style={styles.chipWrap}>
               {chips.map((chip) => {
                 const isActive = selectedBodyArea === chip;
+                const option = activeDetailRegionId
+                  ? closeUpOptions.find((item) => item.title === chip)
+                  : undefined;
 
                 return (
                   <Pressable
@@ -588,6 +598,11 @@ export function BodyMap(props: FlexibleBodyMapProps) {
                     >
                       {chip}
                     </Text>
+                    {option ? (
+                      <Text style={styles.chipDescription}>
+                        {option.technicalArea}
+                      </Text>
+                    ) : null}
                   </Pressable>
                 );
               })}
@@ -824,6 +839,14 @@ const styles = StyleSheet.create({
   },
   chipTextActive: {
     color: navy,
+  },
+  chipDescription: {
+    color: softText,
+    fontSize: 10,
+    lineHeight: 14,
+    fontWeight: "600",
+    marginTop: 3,
+    maxWidth: 180,
   },
   imageStage: {
     minHeight: 540,

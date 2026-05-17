@@ -543,7 +543,7 @@ export const PROTOCOL_PLACEMENT_STRATEGIES: ProtocolPlacementStrategy[] = [
       "lumbar / si-glute",
       "lumbar nerve",
     ],
-    visualDefinitionId: "hip-piriformis",
+    visualDefinitionId: "low-back-sciatic-nerve-pathway",
     plainLanguagePlacement:
       "Place one pad near the low back or upper butt-cheek area where the nerve pain seems to start, and place the second pad farther down the same-side leg along the path where the pain travels.",
     technicalPlacement:

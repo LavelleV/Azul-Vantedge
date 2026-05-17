@@ -438,6 +438,17 @@ export const PAD_PLACEMENT_ANCHORS: Record<string, PadPlacementAnchor> = {
     y: 58,
   },
 
+  posterior_thigh_sciatic_pathway: {
+    id: "posterior_thigh_sciatic_pathway",
+    label: "Posterior Thigh",
+    technicalAnchor: "Posterior thigh / sciatic pathway region",
+    regionId: "hip_glute",
+    view: "back",
+    imageKey: "hip-glute-back",
+    x: 64,
+    y: 75,
+  },
+
   // KNEE
   quadriceps_tendon_suprapatellar: {
     id: "quadriceps_tendon_suprapatellar",
